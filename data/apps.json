@@ -1,0 +1,689 @@
+{
+  "schema": 1,
+  "_help": "App removal list. pattern = provisioned package DisplayName (wildcards * allowed). os = win10 | win11 | both. level = safe | aggressive | unsafe (unsafe is never selected by a preset level). default = ticked in the GUI and used by the console. minBuild / maxBuild (optional) = only shown for images in that build range. protected = never removed.",
+  "protected": [
+    "Microsoft.WindowsStore",
+    "Microsoft.StorePurchaseApp",
+    "Microsoft.DesktopAppInstaller",
+    "Microsoft.SecHealthUI",
+    "Microsoft.MicrosoftEdge*",
+    "Microsoft.WebView2*",
+    "Microsoft.VCLibs*",
+    "Microsoft.UI.Xaml*",
+    "Microsoft.NET.Native*",
+    "Microsoft.WindowsAppRuntime*",
+    "Microsoft.WindowsCalculator",
+    "Microsoft.Windows.Photos",
+    "Microsoft.WindowsNotepad",
+    "Microsoft.WindowsTerminal",
+    "Microsoft.ScreenSketch",
+    "Microsoft.Paint",
+    "Microsoft.*VideoExtension*",
+    "Microsoft.*ImageExtension*",
+    "Microsoft.WebMediaExtensions",
+    "Microsoft.ApplicationCompatibilityEnhancements",
+    "Microsoft.Services.Store.Engagement",
+    "Microsoft.Advertising.Xaml"
+  ],
+  "apps": [
+    {
+      "pattern": "Clipchamp.Clipchamp",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "minBuild": 22621,
+      "name": { "vi": "Clipchamp video editor", "en": "Clipchamp video editor", "zh-CN": "Clipchamp video editor", "km": "Clipchamp video editor" }
+    },
+    {
+      "pattern": "MSTeams",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "minBuild": 22631,
+      "name": { "vi": "Microsoft Teams (bản mới)", "en": "Microsoft Teams (new)", "zh-CN": "Microsoft Teams (新版)", "km": "Microsoft Teams (ថ្មី)" }
+    },
+    {
+      "pattern": "Microsoft.OutlookForWindows",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "minBuild": 26100,
+      "name": { "vi": "Outlook (bản mới)", "en": "Outlook (new)", "zh-CN": "Outlook (新版)", "km": "Outlook (ថ្មី)" }
+    },
+    {
+      "pattern": "Microsoft.BingNews",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Microsoft News", "en": "Microsoft News", "zh-CN": "Microsoft News", "km": "Microsoft News" }
+    },
+    {
+      "pattern": "Microsoft.BingSearch",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "minBuild": 26100,
+      "name": { "vi": "Bing Search", "en": "Bing Search", "zh-CN": "Bing Search", "km": "Bing Search" }
+    },
+    {
+      "pattern": "Microsoft.BingWeather",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Weather", "en": "Weather", "zh-CN": "Weather", "km": "Weather" }
+    },
+    {
+      "pattern": "Microsoft.GamingApp",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Xbox app", "en": "Xbox app", "zh-CN": "Xbox app", "km": "Xbox app" }
+    },
+    {
+      "pattern": "Microsoft.XboxGamingOverlay",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Xbox Game Bar", "en": "Xbox Game Bar", "zh-CN": "Xbox Game Bar", "km": "Xbox Game Bar" }
+    },
+    {
+      "pattern": "Microsoft.Xbox.TCUI",
+      "os": "win11",
+      "default": false,
+      "level": "unsafe",
+      "name": {
+        "vi": "Xbox TCUI (không an toàn: giao diện Store/game)",
+        "en": "Xbox TCUI (unsafe: Store/games UI)",
+        "zh-CN": "Xbox TCUI (不安全: Store/游戏界面)",
+        "km": "Xbox TCUI (គ្មានសុវត្ថិភាព: ផ្ទាំង Store/ហ្គេម)"
+      }
+    },
+    {
+      "pattern": "Microsoft.XboxIdentityProvider",
+      "os": "win11",
+      "default": false,
+      "level": "unsafe",
+      "name": {
+        "vi": "Xbox Identity Provider (không an toàn: đăng nhập game)",
+        "en": "Xbox Identity Provider (unsafe: game sign-in)",
+        "zh-CN": "Xbox Identity Provider (不安全: 游戏登录)",
+        "km": "Xbox Identity Provider (គ្មានសុវត្ថិភាព: ការចូលគណនីហ្គេម)"
+      }
+    },
+    {
+      "pattern": "Microsoft.XboxSpeechToTextOverlay",
+      "os": "win11",
+      "default": false,
+      "level": "unsafe",
+      "name": {
+        "vi": "Xbox Speech-to-text (không an toàn: trợ năng, khó cài lại)",
+        "en": "Xbox Speech-to-text (unsafe: accessibility, hard to reinstall)",
+        "zh-CN": "Xbox Speech-to-text (不安全: 辅助功能，难以重新安装)",
+        "km": "Xbox Speech-to-text (គ្មានសុវត្ថិភាព: មុខងារជំនួយ ពិបាកដំឡើងឡើងវិញ)"
+      }
+    },
+    {
+      "pattern": "Microsoft.MicrosoftSolitaireCollection",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Solitaire Collection", "en": "Solitaire Collection", "zh-CN": "Solitaire Collection", "km": "Solitaire Collection" }
+    },
+    {
+      "pattern": "Microsoft.GetHelp",
+      "os": "win11",
+      "default": false,
+      "level": "unsafe",
+      "name": {
+        "vi": "Get Help (không an toàn: công cụ khắc phục sự cố)",
+        "en": "Get Help (unsafe: troubleshooters)",
+        "zh-CN": "Get Help (不安全: 疑难解答)",
+        "km": "Get Help (គ្មានសុវត្ថិភាព: ឧបករណ៍ដោះស្រាយបញ្ហា)"
+      }
+    },
+    {
+      "pattern": "Microsoft.MicrosoftOfficeHub",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "name": {
+        "vi": "Microsoft 365 (Office) hub",
+        "en": "Microsoft 365 (Office) hub",
+        "zh-CN": "Microsoft 365 (Office) hub",
+        "km": "Microsoft 365 (Office) hub"
+      }
+    },
+    {
+      "pattern": "Microsoft.PowerAutomateDesktop",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Power Automate", "en": "Power Automate", "zh-CN": "Power Automate", "km": "Power Automate" }
+    },
+    {
+      "pattern": "Microsoft.Todos",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Microsoft To Do", "en": "Microsoft To Do", "zh-CN": "Microsoft To Do", "km": "Microsoft To Do" }
+    },
+    {
+      "pattern": "Microsoft.Windows.DevHome",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "minBuild": 22631,
+      "maxBuild": 26100,
+      "name": { "vi": "Dev Home", "en": "Dev Home", "zh-CN": "Dev Home", "km": "Dev Home" }
+    },
+    {
+      "pattern": "Microsoft.WindowsFeedbackHub",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Feedback Hub", "en": "Feedback Hub", "zh-CN": "Feedback Hub", "km": "Feedback Hub" }
+    },
+    {
+      "pattern": "Microsoft.YourPhone",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Phone Link", "en": "Phone Link", "zh-CN": "Phone Link", "km": "Phone Link" }
+    },
+    {
+      "pattern": "MicrosoftWindows.CrossDevice",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "minBuild": 26100,
+      "name": { "vi": "Cross Device experience", "en": "Cross Device experience", "zh-CN": "Cross Device experience", "km": "Cross Device experience" }
+    },
+    {
+      "pattern": "MicrosoftCorporationII.QuickAssist",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "minBuild": 22621,
+      "name": { "vi": "Quick Assist", "en": "Quick Assist", "zh-CN": "Quick Assist", "km": "Quick Assist" }
+    },
+    {
+      "pattern": "Microsoft.Copilot",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "minBuild": 26100,
+      "name": { "vi": "Copilot", "en": "Copilot", "zh-CN": "Copilot", "km": "Copilot" }
+    },
+    {
+      "pattern": "MicrosoftCorporationII.MicrosoftFamily",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "minBuild": 22621,
+      "name": { "vi": "Microsoft Family", "en": "Microsoft Family", "zh-CN": "Microsoft Family", "km": "Microsoft Family" }
+    },
+    {
+      "pattern": "Microsoft.549981C3F5F10",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "maxBuild": 22631,
+      "name": { "vi": "Cortana (bản cũ)", "en": "Cortana (older builds)", "zh-CN": "Cortana (旧版本)", "km": "Cortana (កំណែចាស់)" }
+    },
+    {
+      "pattern": "Microsoft.WindowsMaps",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "maxBuild": 22631,
+      "name": { "vi": "Maps (bản cũ)", "en": "Maps (older builds)", "zh-CN": "Maps (旧版本)", "km": "Maps (កំណែចាស់)" }
+    },
+    {
+      "pattern": "Microsoft.People",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "maxBuild": 22631,
+      "name": { "vi": "People (bản cũ)", "en": "People (older builds)", "zh-CN": "People (旧版本)", "km": "People (កំណែចាស់)" }
+    },
+    {
+      "pattern": "Microsoft.Getstarted",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Tips / Get Started", "en": "Tips / Get Started", "zh-CN": "Tips / Get Started", "km": "Tips / Get Started" }
+    },
+    {
+      "pattern": "Microsoft.Windows.Ai.Copilot.Provider",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "minBuild": 22631,
+      "maxBuild": 26100,
+      "name": {
+        "vi": "Copilot provider (bản cũ)",
+        "en": "Copilot provider (older builds)",
+        "zh-CN": "Copilot provider (旧版本)",
+        "km": "Copilot provider (កំណែចាស់)"
+      }
+    },
+    {
+      "pattern": "MicrosoftTeams",
+      "os": "win11",
+      "default": true,
+      "level": "safe",
+      "maxBuild": 22631,
+      "name": { "vi": "Teams consumer (bản cũ)", "en": "Teams consumer (older builds)", "zh-CN": "Teams consumer (旧版本)", "km": "Teams consumer (កំណែចាស់)" }
+    },
+    {
+      "pattern": "MicrosoftWindows.Client.WebExperience",
+      "os": "win11",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Widgets board (tuỳ chọn)", "en": "Widgets board (optional)", "zh-CN": "Widgets board (可选)", "km": "Widgets board (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.ZuneMusic",
+      "os": "win11",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Media Player (tuỳ chọn)", "en": "Media Player (optional)", "zh-CN": "Media Player (可选)", "km": "Media Player (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.ZuneVideo",
+      "os": "win11",
+      "default": false,
+      "level": "aggressive",
+      "maxBuild": 22631,
+      "name": { "vi": "Movies & TV (tuỳ chọn)", "en": "Movies & TV (optional)", "zh-CN": "Movies & TV (可选)", "km": "Movies & TV (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.WindowsCamera",
+      "os": "win11",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Camera (tuỳ chọn)", "en": "Camera (optional)", "zh-CN": "Camera (可选)", "km": "Camera (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.WindowsAlarms",
+      "os": "win11",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Clock / Alarms (tuỳ chọn)", "en": "Clock / Alarms (optional)", "zh-CN": "Clock / Alarms (可选)", "km": "Clock / Alarms (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.WindowsSoundRecorder",
+      "os": "win11",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Sound Recorder (tuỳ chọn)", "en": "Sound Recorder (optional)", "zh-CN": "Sound Recorder (可选)", "km": "Sound Recorder (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.MicrosoftStickyNotes",
+      "os": "win11",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Sticky Notes (tuỳ chọn)", "en": "Sticky Notes (optional)", "zh-CN": "Sticky Notes (可选)", "km": "Sticky Notes (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "microsoft.windowscommunicationsapps",
+      "os": "win11",
+      "default": false,
+      "level": "aggressive",
+      "maxBuild": 22631,
+      "name": { "vi": "Mail & Calendar (bản cũ)", "en": "Mail & Calendar (older builds)", "zh-CN": "Mail & Calendar (旧版本)", "km": "Mail & Calendar (កំណែចាស់)" }
+    },
+    {
+      "pattern": "Microsoft.3DBuilder",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "maxBuild": 16299,
+      "name": { "vi": "3D Builder (bản cũ)", "en": "3D Builder (older builds)", "zh-CN": "3D Builder (旧版本)", "km": "3D Builder (កំណែចាស់)" }
+    },
+    {
+      "pattern": "Microsoft.Microsoft3DViewer",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 15063,
+      "name": { "vi": "3D Viewer", "en": "3D Viewer", "zh-CN": "3D Viewer", "km": "3D Viewer" }
+    },
+    {
+      "pattern": "Microsoft.Print3D",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 16299,
+      "name": { "vi": "Print 3D (bản cũ)", "en": "Print 3D (older builds)", "zh-CN": "Print 3D (旧版本)", "km": "Print 3D (កំណែចាស់)" }
+    },
+    {
+      "pattern": "Microsoft.MixedReality.Portal",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 15063,
+      "name": { "vi": "Mixed Reality Portal", "en": "Mixed Reality Portal", "zh-CN": "Mixed Reality Portal", "km": "Mixed Reality Portal" }
+    },
+    {
+      "pattern": "Microsoft.People",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "People", "en": "People", "zh-CN": "People", "km": "People" }
+    },
+    {
+      "pattern": "Microsoft.SkypeApp",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Skype", "en": "Skype", "zh-CN": "Skype", "km": "Skype" }
+    },
+    {
+      "pattern": "Microsoft.OneConnect",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 14393,
+      "name": { "vi": "Mobile Plans (OneConnect)", "en": "Mobile Plans (OneConnect)", "zh-CN": "Mobile Plans (OneConnect)", "km": "Mobile Plans (OneConnect)" }
+    },
+    {
+      "pattern": "Microsoft.Wallet",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 14393,
+      "name": { "vi": "Wallet", "en": "Wallet", "zh-CN": "Wallet", "km": "Wallet" }
+    },
+    {
+      "pattern": "Microsoft.Messaging",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 10586,
+      "maxBuild": 18363,
+      "name": { "vi": "Messaging (bản cũ)", "en": "Messaging (older builds)", "zh-CN": "Messaging (旧版本)", "km": "Messaging (កំណែចាស់)" }
+    },
+    {
+      "pattern": "Microsoft.BingWeather",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Weather", "en": "Weather", "zh-CN": "Weather", "km": "Weather" }
+    },
+    {
+      "pattern": "Microsoft.BingNews",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "News", "en": "News", "zh-CN": "News", "km": "News" }
+    },
+    {
+      "pattern": "Microsoft.GetHelp",
+      "os": "win10",
+      "default": false,
+      "level": "unsafe",
+      "minBuild": 16299,
+      "name": {
+        "vi": "Get Help (không an toàn: công cụ khắc phục sự cố)",
+        "en": "Get Help (unsafe: troubleshooters)",
+        "zh-CN": "Get Help (不安全: 疑难解答)",
+        "km": "Get Help (គ្មានសុវត្ថិភាព: ឧបករណ៍ដោះស្រាយបញ្ហា)"
+      }
+    },
+    {
+      "pattern": "Microsoft.Getstarted",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Tips / Get Started", "en": "Tips / Get Started", "zh-CN": "Tips / Get Started", "km": "Tips / Get Started" }
+    },
+    {
+      "pattern": "Microsoft.MicrosoftOfficeHub",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Office hub", "en": "Office hub", "zh-CN": "Office hub", "km": "Office hub" }
+    },
+    {
+      "pattern": "Microsoft.Office.OneNote",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "OneNote for Windows 10", "en": "OneNote for Windows 10", "zh-CN": "OneNote for Windows 10", "km": "OneNote for Windows 10" }
+    },
+    {
+      "pattern": "Microsoft.MicrosoftSolitaireCollection",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Solitaire Collection", "en": "Solitaire Collection", "zh-CN": "Solitaire Collection", "km": "Solitaire Collection" }
+    },
+    {
+      "pattern": "Microsoft.XboxApp",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "name": { "vi": "Xbox Console Companion", "en": "Xbox Console Companion", "zh-CN": "Xbox Console Companion", "km": "Xbox Console Companion" }
+    },
+    {
+      "pattern": "Microsoft.GamingApp",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 19041,
+      "name": { "vi": "Xbox app (nếu có)", "en": "Xbox app (if present)", "zh-CN": "Xbox app (如存在)", "km": "Xbox app (បើមាន)" }
+    },
+    {
+      "pattern": "Microsoft.XboxGameOverlay",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 15063,
+      "name": { "vi": "Xbox Game Overlay", "en": "Xbox Game Overlay", "zh-CN": "Xbox Game Overlay", "km": "Xbox Game Overlay" }
+    },
+    {
+      "pattern": "Microsoft.XboxGamingOverlay",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 17134,
+      "name": { "vi": "Xbox Game Bar", "en": "Xbox Game Bar", "zh-CN": "Xbox Game Bar", "km": "Xbox Game Bar" }
+    },
+    {
+      "pattern": "Microsoft.Xbox.TCUI",
+      "os": "win10",
+      "default": false,
+      "level": "unsafe",
+      "minBuild": 15063,
+      "name": {
+        "vi": "Xbox TCUI (không an toàn: giao diện Store/game)",
+        "en": "Xbox TCUI (unsafe: Store/games UI)",
+        "zh-CN": "Xbox TCUI (不安全: Store/游戏界面)",
+        "km": "Xbox TCUI (គ្មានសុវត្ថិភាព: ផ្ទាំង Store/ហ្គេម)"
+      }
+    },
+    {
+      "pattern": "Microsoft.XboxIdentityProvider",
+      "os": "win10",
+      "default": false,
+      "level": "unsafe",
+      "name": {
+        "vi": "Xbox Identity Provider (không an toàn: đăng nhập game)",
+        "en": "Xbox Identity Provider (unsafe: game sign-in)",
+        "zh-CN": "Xbox Identity Provider (不安全: 游戏登录)",
+        "km": "Xbox Identity Provider (គ្មានសុវត្ថិភាព: ការចូលគណនីហ្គេម)"
+      }
+    },
+    {
+      "pattern": "Microsoft.XboxSpeechToTextOverlay",
+      "os": "win10",
+      "default": false,
+      "level": "unsafe",
+      "minBuild": 17134,
+      "name": {
+        "vi": "Xbox Speech-to-text (không an toàn: trợ năng, khó cài lại)",
+        "en": "Xbox Speech-to-text (unsafe: accessibility, hard to reinstall)",
+        "zh-CN": "Xbox Speech-to-text (不安全: 辅助功能，难以重新安装)",
+        "km": "Xbox Speech-to-text (គ្មានសុវត្ថិភាព: មុខងារជំនួយ ពិបាកដំឡើងឡើងវិញ)"
+      }
+    },
+    {
+      "pattern": "Microsoft.YourPhone",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 17763,
+      "name": { "vi": "Your Phone / Phone Link", "en": "Your Phone / Phone Link", "zh-CN": "Your Phone / Phone Link", "km": "Your Phone / Phone Link" }
+    },
+    {
+      "pattern": "Microsoft.WindowsFeedbackHub",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 14393,
+      "name": { "vi": "Feedback Hub", "en": "Feedback Hub", "zh-CN": "Feedback Hub", "km": "Feedback Hub" }
+    },
+    {
+      "pattern": "Microsoft.549981C3F5F10",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 19041,
+      "name": { "vi": "Cortana", "en": "Cortana", "zh-CN": "Cortana", "km": "Cortana" }
+    },
+    {
+      "pattern": "Clipchamp.Clipchamp",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 19041,
+      "name": { "vi": "Clipchamp (nếu có)", "en": "Clipchamp (if present)", "zh-CN": "Clipchamp (如存在)", "km": "Clipchamp (បើមាន)" }
+    },
+    {
+      "pattern": "MicrosoftTeams",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 19041,
+      "name": { "vi": "Teams (nếu có)", "en": "Teams (if present)", "zh-CN": "Teams (如存在)", "km": "Teams (បើមាន)" }
+    },
+    {
+      "pattern": "MSTeams",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 19041,
+      "name": { "vi": "Teams new (nếu có)", "en": "Teams new (if present)", "zh-CN": "Teams new (如存在)", "km": "Teams new (បើមាន)" }
+    },
+    {
+      "pattern": "Microsoft.Todos",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 19041,
+      "name": { "vi": "To Do (nếu có)", "en": "To Do (if present)", "zh-CN": "To Do (如存在)", "km": "To Do (បើមាន)" }
+    },
+    {
+      "pattern": "Microsoft.PowerAutomateDesktop",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 19041,
+      "name": { "vi": "Power Automate (nếu có)", "en": "Power Automate (if present)", "zh-CN": "Power Automate (如存在)", "km": "Power Automate (បើមាន)" }
+    },
+    {
+      "pattern": "Microsoft.OutlookForWindows",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 19041,
+      "name": { "vi": "Outlook new (nếu có)", "en": "Outlook new (if present)", "zh-CN": "Outlook new (如存在)", "km": "Outlook new (បើមាន)" }
+    },
+    {
+      "pattern": "Microsoft.Copilot",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 19041,
+      "name": { "vi": "Copilot (nếu có)", "en": "Copilot (if present)", "zh-CN": "Copilot (如存在)", "km": "Copilot (បើមាន)" }
+    },
+    {
+      "pattern": "MicrosoftCorporationII.MicrosoftFamily",
+      "os": "win10",
+      "default": true,
+      "level": "safe",
+      "minBuild": 19041,
+      "name": { "vi": "Microsoft Family (nếu có)", "en": "Microsoft Family (if present)", "zh-CN": "Microsoft Family (如存在)", "km": "Microsoft Family (បើមាន)" }
+    },
+    {
+      "pattern": "Microsoft.ZuneMusic",
+      "os": "win10",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Groove Music (tuỳ chọn)", "en": "Groove Music (optional)", "zh-CN": "Groove Music (可选)", "km": "Groove Music (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.ZuneVideo",
+      "os": "win10",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Movies & TV (tuỳ chọn)", "en": "Movies & TV (optional)", "zh-CN": "Movies & TV (可选)", "km": "Movies & TV (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.WindowsMaps",
+      "os": "win10",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Maps (tuỳ chọn)", "en": "Maps (optional)", "zh-CN": "Maps (可选)", "km": "Maps (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.MSPaint",
+      "os": "win10",
+      "default": false,
+      "level": "aggressive",
+      "minBuild": 15063,
+      "name": {
+        "vi": "Paint 3D (tuỳ chọn; Paint cổ điển vẫn giữ)",
+        "en": "Paint 3D (optional; classic Paint stays)",
+        "zh-CN": "Paint 3D (可选; 保留经典画图)",
+        "km": "Paint 3D (ស្រេចចិត្ត; Paint បុរាណនៅដដែល)"
+      }
+    },
+    {
+      "pattern": "microsoft.windowscommunicationsapps",
+      "os": "win10",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Mail & Calendar (tuỳ chọn)", "en": "Mail & Calendar (optional)", "zh-CN": "Mail & Calendar (可选)", "km": "Mail & Calendar (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.WindowsCamera",
+      "os": "win10",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Camera (tuỳ chọn)", "en": "Camera (optional)", "zh-CN": "Camera (可选)", "km": "Camera (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.WindowsAlarms",
+      "os": "win10",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Alarms & Clock (tuỳ chọn)", "en": "Alarms & Clock (optional)", "zh-CN": "Alarms & Clock (可选)", "km": "Alarms & Clock (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.WindowsSoundRecorder",
+      "os": "win10",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Voice Recorder (tuỳ chọn)", "en": "Voice Recorder (optional)", "zh-CN": "Voice Recorder (可选)", "km": "Voice Recorder (ស្រេចចិត្ត)" }
+    },
+    {
+      "pattern": "Microsoft.MicrosoftStickyNotes",
+      "os": "win10",
+      "default": false,
+      "level": "aggressive",
+      "name": { "vi": "Sticky Notes (tuỳ chọn)", "en": "Sticky Notes (optional)", "zh-CN": "Sticky Notes (可选)", "km": "Sticky Notes (ស្រេចចិត្ត)" }
+    }
+  ]
+}

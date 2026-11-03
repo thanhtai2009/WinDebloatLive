@@ -1,0 +1,27 @@
+﻿# WinDebloat Live UI strings - 简体中文 (partial)
+# UTF-8 with BOM. Keys missing here fall back to en.psd1. Translations shared with WinDebloat Tool.
+@{
+    'mode.title' = '选择使用模式'
+    'mode.simple' = '简单'
+    'mode.advanced' = '高级'
+    'mode.remember' = '记住我的选择（下次不再询问）'
+    'btn.appDef' = '默认'
+    'btn.appAll' = '全选'
+    'btn.appNone' = '全不选'
+    'chk.rulesUpdate' = '启动时检查精简规则更新'
+    'lbl.rulesInfo' = '精简规则：版本 {0}（{1}）'
+    'rules.bundled' = '内置'
+    'rules.downloaded' = '已下载，SHA256 已校验'
+    'btn.presetApply' = '应用'
+    'btn.cancel' = '取消'
+    'lnk.log' = '打开日志文件夹'
+    'lvl.aggressive' = '激进'
+    'app.unsafe' = '不安全'
+    'status.ready' = '就绪'
+    'status.error' = '错误: {0}'
+    'status.waiting' = '正在等待“{0}”完成...'
+    'msg.jobRunning' = '仍有任务在运行。请点击取消并等待其停止。'
+    'msg.error' = '“{0}”中发生意外错误:\n{1}\n\n请把日志文件发给协助你的人。'
+    'msg.logFile' = '日志文件: {0}'
+    'tip.uiLang' = '界面语言'
+}

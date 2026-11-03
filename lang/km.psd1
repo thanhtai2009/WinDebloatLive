@@ -1,0 +1,27 @@
+﻿# WinDebloat Live UI strings - ភាសាខ្មែរ (partial)
+# UTF-8 with BOM. Keys missing here fall back to en.psd1. Translations shared with WinDebloat Tool.
+@{
+    'mode.title' = 'តើអ្នកចង់ប្រើរបៀបណា?'
+    'mode.simple' = 'ងាយស្រួល'
+    'mode.advanced' = 'កម្រិតខ្ពស់'
+    'mode.remember' = 'ចងចាំជម្រើសរបស់ខ្ញុំ (មិនសួរម្ដងទៀត)'
+    'btn.appDef' = 'លំនាំដើម'
+    'btn.appAll' = 'ទាំងអស់'
+    'btn.appNone' = 'មិនជ្រើស'
+    'chk.rulesUpdate' = 'ពិនិត្យរកច្បាប់ debloat ថ្មីពេលបើកកម្មវិធី'
+    'lbl.rulesInfo' = 'ច្បាប់ debloat៖ កំណែ {0} ({1})'
+    'rules.bundled' = 'មានស្រាប់'
+    'rules.downloaded' = 'បានទាញយក, បានផ្ទៀងផ្ទាត់ SHA256'
+    'btn.presetApply' = 'អនុវត្ត'
+    'btn.cancel' = 'បោះបង់'
+    'lnk.log' = 'បើកថតកំណត់ហេតុ'
+    'lvl.aggressive' = 'ខ្លាំង'
+    'app.unsafe' = 'គ្មានសុវត្ថិភាព'
+    'status.ready' = 'រួចរាល់'
+    'status.error' = 'កំហុស: {0}'
+    'status.waiting' = 'កំពុងរង់ចាំ "{0}" បញ្ចប់...'
+    'msg.jobRunning' = 'កិច្ចការនៅតែដំណើរការ។ សូមចុចបោះបង់ ហើយរង់ចាំវាឈប់។'
+    'msg.error' = 'កំហុសមិនរំពឹងទុកនៅ "{0}":\n{1}\n\nសូមផ្ញើឯកសារកំណត់ហេតុទៅអ្នកដែលជួយអ្នក។'
+    'msg.logFile' = 'ឯកសារកំណត់ហេតុ: {0}'
+    'tip.uiLang' = 'ភាសាចំណុចប្រទាក់'
+}

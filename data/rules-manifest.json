@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "version": "2026.11.1.1",
+  "minToolVersion": "1.1.0",
+  "files": [
+    {
+      "name": "apps.json",
+      "sha256": "253D281C8655F8AC823275902D694319DCAC9EB2983582D0EF6A54D1DF0E195F"
+    },
+    {
+      "name": "tweaks.json",
+      "sha256": "EF5AE1E8EBB8DE541572033E1EF47F66C927D97CB356A917F77C0B9FF62FC7A9"
+    }
+  ]
+}

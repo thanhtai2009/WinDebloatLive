@@ -1,0 +1,8 @@
+# runtime artefacts
+*.log
+*.sha256
+*.zip
+logs/
+settings.psd1
+# downloaded debloat rules (rules auto-update)
+/rules/

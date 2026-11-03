@@ -1,0 +1,1297 @@
+{
+  "schema": 1,
+  "_help": "Registry tweaks for the OFFLINE image. hive: SOFTWARE = HKLM\\SOFTWARE, SYSTEM = HKLM\\SYSTEM, NTUSER = Users\\Default\\NTUSER.DAT (every new user), DEFAULT = Windows\\System32\\config\\DEFAULT (.DEFAULT profile). os = win10 | win11 | both; level = safe | aggressive; default = ticked in the GUI / used by the console. set = values to write, deleteKey = keys to delete, deleteValue = values to delete; undo = how to restore the Windows default. bootWim = true: bootSet is also written to boot.wim index 2 (Windows Setup). minBuild / maxBuild (optional) limit the builds.",
+  "tweaks": [
+    {
+      "id": "ConsumerFeatures",
+      "os": "win11",
+      "category": "ads",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "name": {
+        "vi": "Tắt gợi ý ứng dụng và quảng cáo của Microsoft",
+        "en": "Turn off suggested apps and ads (consumer features)",
+        "zh-CN": "关闭推荐应用和广告 (消费者功能)",
+        "km": "បិទកម្មវិធីណែនាំ និងពាណិជ្ជកម្មរបស់ Microsoft"
+      },
+      "description": {
+        "vi": "Tắt tự cài ứng dụng gợi ý của Microsoft",
+        "en": "Disable consumer features / suggested apps",
+        "zh-CN": "关闭消费者功能 / 推荐应用自动安装",
+        "km": "បិទមុខងារអ្នកប្រើប្រាស់ និងការដំឡើងកម្មវិធីណែនាំ"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableWindowsConsumerFeatures",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableConsumerAccountStateContent",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableCloudOptimizedContent",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "CopilotOff",
+      "os": "win11",
+      "category": "ai",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "minBuild": 22621,
+      "name": { "vi": "Tắt Copilot (bằng chính sách nhóm)", "en": "Turn off Copilot (policy)", "zh-CN": "关闭 Copilot (策略)", "km": "បិទ Copilot (គោលការណ៍)" },
+      "description": {
+        "vi": "Tắt Copilot (chính sách nhóm)",
+        "en": "Turn off Windows Copilot (policy)",
+        "zh-CN": "通过组策略关闭 Windows Copilot",
+        "km": "បិទ Windows Copilot (គោលការណ៍)"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\WindowsCopilot",
+          "name": "TurnOffWindowsCopilot",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Policies\\Microsoft\\Windows\\WindowsCopilot",
+          "name": "TurnOffWindowsCopilot",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "WidgetsFeedOff",
+      "os": "win11",
+      "category": "taskbar",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "name": { "vi": "Tắt bảng tin Widgets", "en": "Turn off the Widgets news feed", "zh-CN": "关闭小组件资讯", "km": "បិទព័ត៌មាន Widgets" },
+      "description": { "vi": "Tắt tin tức Widgets", "en": "Turn off Widgets news feed", "zh-CN": "关闭小组件资讯源", "km": "បិទព័ត៌មានក្នុង Widgets" },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\Windows Feeds",
+          "name": "EnableFeeds",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "TeamsChatAutoInstallOff",
+      "os": "win11",
+      "category": "apps",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "maxBuild": 22631,
+      "name": {
+        "vi": "Chặn Teams (cá nhân) tự cài",
+        "en": "Stop Teams (personal) from installing itself",
+        "zh-CN": "阻止 Teams (个人版) 自动安装",
+        "km": "រារាំង Teams (ផ្ទាល់ខ្លួន) មិនឱ្យដំឡើងដោយខ្លួនឯង"
+      },
+      "description": {
+        "vi": "Chặn tự cài Teams/Chat",
+        "en": "Stop Teams/Chat auto-install",
+        "zh-CN": "阻止 Teams/聊天自动安装",
+        "km": "រារាំង Teams/Chat មិនឱ្យដំឡើងដោយស្វ័យប្រវត្តិ"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Microsoft\\Windows\\CurrentVersion\\Communications",
+          "name": "ConfigureChatAutoInstall",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "BypassNRO",
+      "os": "win11",
+      "category": "setup",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "minBuild": 22000,
+      "name": {
+        "vi": "Cho phép cài không cần mạng, dùng tài khoản cục bộ (BypassNRO)",
+        "en": "Allow setup without internet / local account (BypassNRO)",
+        "zh-CN": "允许无网络安装 / 本地账户 (BypassNRO)",
+        "km": "អនុញ្ញាតដំឡើងដោយគ្មានអ៊ីនធឺណិត / គណនីមូលដ្ឋាន (BypassNRO)"
+      },
+      "description": {
+        "vi": "BypassNRO=1 (cài không cần mạng, tài khoản cục bộ)",
+        "en": "BypassNRO=1 (allow setup without internet / local account)",
+        "zh-CN": "BypassNRO=1 (允许无网络安装 / 使用本地账户)",
+        "km": "BypassNRO=1 (អនុញ្ញាតដំឡើងដោយគ្មានអ៊ីនធឺណិត / គណនីមូលដ្ឋាន)"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Microsoft\\Windows\\CurrentVersion\\OOBE",
+          "name": "BypassNRO",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "NewUserSuggestionsOff",
+      "os": "win11",
+      "category": "ads",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "name": {
+        "vi": "Tắt mẹo và gợi ý cho người dùng mới",
+        "en": "No tips and suggestions for new users",
+        "zh-CN": "关闭新用户的提示和建议",
+        "km": "បិទគន្លឹះ និងការណែនាំសម្រាប់អ្នកប្រើថ្មី"
+      },
+      "description": {
+        "vi": "Người dùng mới: tắt gợi ý, tự cài ứng dụng, gợi ý trong Start",
+        "en": "New users: no suggestions / silent app installs / Start recommendations",
+        "zh-CN": "新用户: 关闭建议、静默安装应用和“开始”推荐",
+        "km": "អ្នកប្រើថ្មី: បិទការណែនាំ ការដំឡើងកម្មវិធីស្ងាត់ៗ និងការណែនាំក្នុង Start"
+      },
+      "set": [
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "ContentDeliveryAllowed",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "FeatureManagementEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "OemPreInstalledAppsEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "PreInstalledAppsEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "PreInstalledAppsEverEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SilentInstalledAppsEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SoftLandingEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SystemPaneSuggestionsEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContentEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-310093Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338387Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338388Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338389Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338393Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-353694Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-353696Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-353698Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "RotatingLockScreenOverlayEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Start_IrisRecommendations",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "ChatTaskbarOff",
+      "os": "win11",
+      "category": "taskbar",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "maxBuild": 22631,
+      "name": {
+        "vi": "Ẩn biểu tượng Chat / Teams trên thanh tác vụ",
+        "en": "Hide the Chat / Teams icon on the taskbar",
+        "zh-CN": "隐藏任务栏上的聊天 / Teams 图标",
+        "km": "លាក់រូប Chat / Teams លើរបារភារកិច្ច"
+      },
+      "description": {
+        "vi": "Ẩn nút Chat trên thanh tác vụ (người dùng mới)",
+        "en": "Hide Chat button on taskbar (new users)",
+        "zh-CN": "隐藏任务栏上的聊天按钮 (新用户)",
+        "km": "លាក់ប៊ូតុង Chat លើរបារភារកិច្ច (អ្នកប្រើថ្មី)"
+      },
+      "set": [
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "TaskbarMn",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "RemoveOobeSetupTasks",
+      "os": "win11",
+      "category": "apps",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "minBuild": 22621,
+      "name": {
+        "vi": "Bỏ màn hình nhắc \"hoàn tất thiết lập\"",
+        "en": "Remove the \"finish setting up\" nag screens",
+        "zh-CN": "去掉“完成设置”提醒界面",
+        "km": "លុបអេក្រង់រំលឹក \"បញ្ចប់ការរៀបចំ\""
+      },
+      "description": {
+        "vi": "Xoá tác vụ tự cài Outlook/DevHome/CrossDevice khi cài đặt",
+        "en": "Remove OOBE auto-install tasks (Outlook, Dev Home, Cross Device)",
+        "zh-CN": "删除安装时自动安装 Outlook、Dev Home、Cross Device 的任务",
+        "km": "លុបភារកិច្ចដំឡើង Outlook, Dev Home, Cross Device ដោយស្វ័យប្រវត្តិពេលរៀបចំ"
+      },
+      "deleteKey": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Microsoft\\WindowsUpdate\\Orchestrator\\UScheduler_Oobe\\OutlookUpdate",
+          "undo": { "action": "none", "note": "Windows Update re-creates the key when needed" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Microsoft\\WindowsUpdate\\Orchestrator\\UScheduler_Oobe\\DevHomeUpdate",
+          "undo": { "action": "none", "note": "Windows Update re-creates the key when needed" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Microsoft\\WindowsUpdate\\Orchestrator\\UScheduler_Oobe\\CrossDeviceUpdate",
+          "undo": { "action": "none", "note": "Windows Update re-creates the key when needed" }
+        }
+      ]
+    },
+    {
+      "id": "ConsumerFeatures",
+      "os": "win10",
+      "category": "ads",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "name": {
+        "vi": "Tắt gợi ý ứng dụng và quảng cáo của Microsoft",
+        "en": "Turn off suggested apps and ads (consumer features)",
+        "zh-CN": "关闭推荐应用和广告 (消费者功能)",
+        "km": "បិទកម្មវិធីណែនាំ និងពាណិជ្ជកម្មរបស់ Microsoft"
+      },
+      "description": {
+        "vi": "Tắt tự cài ứng dụng gợi ý của Microsoft",
+        "en": "Disable consumer features / suggested apps",
+        "zh-CN": "关闭消费者功能 / 推荐应用自动安装",
+        "km": "បិទមុខងារអ្នកប្រើប្រាស់ និងការដំឡើងកម្មវិធីណែនាំ"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableWindowsConsumerFeatures",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableSoftLanding",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableCloudOptimizedContent",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "NewUserSuggestionsOff",
+      "os": "win10",
+      "category": "ads",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "name": {
+        "vi": "Tắt mẹo và gợi ý cho người dùng mới",
+        "en": "No tips and suggestions for new users",
+        "zh-CN": "关闭新用户的提示和建议",
+        "km": "បិទគន្លឹះ និងការណែនាំសម្រាប់អ្នកប្រើថ្មី"
+      },
+      "description": {
+        "vi": "Người dùng mới: tắt tự cài ứng dụng, gợi ý, quảng cáo màn hình khoá",
+        "en": "New users: no silent app installs / suggestions / lock-screen ads",
+        "zh-CN": "新用户: 关闭静默安装应用、建议和锁屏广告",
+        "km": "អ្នកប្រើថ្មី: បិទការដំឡើងកម្មវិធីស្ងាត់ៗ ការណែនាំ និងពាណិជ្ជកម្មលើអេក្រង់ចាក់សោ"
+      },
+      "set": [
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "ContentDeliveryAllowed",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "FeatureManagementEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "OemPreInstalledAppsEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "PreInstalledAppsEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "PreInstalledAppsEverEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SilentInstalledAppsEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SoftLandingEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SystemPaneSuggestionsEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContentEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-310093Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338387Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338388Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338389Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338393Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-353694Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-353696Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "RotatingLockScreenEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "RotatingLockScreenOverlayEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        }
+      ]
+    },
+    {
+      "id": "CortanaWebSearchOff",
+      "os": "win10",
+      "category": "privacy",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "name": {
+        "vi": "Tắt Cortana và kết quả web trong ô tìm kiếm",
+        "en": "Turn off Cortana and web results in Search",
+        "zh-CN": "关闭 Cortana 和搜索中的网页结果",
+        "km": "បិទ Cortana និងលទ្ធផលវេបក្នុងការស្វែងរក"
+      },
+      "description": {
+        "vi": "Tắt Cortana và kết quả web/Bing khi tìm trong Start",
+        "en": "Cortana and web/Bing results in Start search off",
+        "zh-CN": "关闭 Cortana 以及“开始”搜索中的网页/Bing 结果",
+        "km": "បិទ Cortana និងលទ្ធផលវេប/Bing ក្នុងការស្វែងរក Start"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\Windows Search",
+          "name": "AllowCortana",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\Windows Search",
+          "name": "DisableWebSearch",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\Windows Search",
+          "name": "ConnectedSearchUseWeb",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "BingSearchEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "CortanaConsent",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Policies\\Microsoft\\Windows\\Explorer",
+          "name": "DisableSearchBoxSuggestions",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "TelemetryMinimum",
+      "os": "win10",
+      "category": "privacy",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "name": {
+        "vi": "Giảm thu thập dữ liệu chẩn đoán xuống mức thấp nhất",
+        "en": "Telemetry at the minimum level",
+        "zh-CN": "遥测设为最低级别",
+        "km": "កំណត់ការប្រមូលទិន្នន័យវិនិច្ឆ័យត្រឹមកម្រិតទាបបំផុត"
+      },
+      "description": {
+        "vi": "Thu thập dữ liệu chẩn đoán ở mức thấp nhất mà phiên bản cho phép",
+        "en": "Telemetry to minimum allowed by the edition (Home/Pro = Required, Ent/Edu = Security)",
+        "zh-CN": "遥测降至该版本允许的最低级别 (家庭版/专业版 = 必需, 企业版/教育版 = 安全)",
+        "km": "កំណត់ telemetry ត្រឹមកម្រិតទាបបំផុតដែលកំណែអនុញ្ញាត (Home/Pro = Required, Ent/Edu = Security)"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\DataCollection",
+          "name": "AllowTelemetry",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\DataCollection",
+          "name": "DoNotShowFeedbackNotifications",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\AdvertisingInfo",
+          "name": "DisabledByGroupPolicy",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "NewsInterestsOff",
+      "os": "win10",
+      "category": "taskbar",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "minBuild": 18362,
+      "name": {
+        "vi": "Tắt Tin tức và sở thích trên thanh tác vụ",
+        "en": "Turn off News and interests on the taskbar",
+        "zh-CN": "关闭任务栏上的资讯和兴趣",
+        "km": "បិទព័ត៌មាន និងចំណាប់អារម្មណ៍លើរបារភារកិច្ច"
+      },
+      "description": {
+        "vi": "Tắt Tin tức và sở thích trên thanh tác vụ",
+        "en": "News and Interests (taskbar weather/news) off",
+        "zh-CN": "关闭资讯和兴趣 (任务栏天气/新闻)",
+        "km": "បិទព័ត៌មាន និងចំណាប់អារម្មណ៍ (អាកាសធាតុ/ព័ត៌មានលើរបារភារកិច្ច)"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\Windows Feeds",
+          "name": "EnableFeeds",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Feeds",
+          "name": "ShellFeedsTaskbarViewMode",
+          "type": "REG_DWORD",
+          "value": "2",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "MeetNowOff",
+      "os": "win10",
+      "category": "taskbar",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "minBuild": 17763,
+      "name": { "vi": "Ẩn Meet Now", "en": "Hide Meet Now", "zh-CN": "隐藏“立即开会”", "km": "លាក់ Meet Now" },
+      "description": {
+        "vi": "Ẩn Meet Now và People trên thanh tác vụ",
+        "en": "Hide Meet Now and People on the taskbar",
+        "zh-CN": "隐藏任务栏上的“立即开会”和“人脉”",
+        "km": "លាក់ Meet Now និង People លើរបារភារកិច្ច"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
+          "name": "HideSCAMeetNow",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
+          "name": "HideSCAMeetNow",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\People",
+          "name": "PeopleBand",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "CopilotOff",
+      "os": "win10",
+      "category": "ai",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "minBuild": 19045,
+      "name": { "vi": "Tắt Copilot (bằng chính sách nhóm)", "en": "Turn off Copilot (policy)", "zh-CN": "关闭 Copilot (策略)", "km": "បិទ Copilot (គោលការណ៍)" },
+      "description": {
+        "vi": "Tắt Copilot (chính sách nhóm, nếu được cài qua bản cập nhật)",
+        "en": "Turn off Windows Copilot (policy, if it arrives via updates)",
+        "zh-CN": "通过组策略关闭 Windows Copilot (如通过更新安装)",
+        "km": "បិទ Windows Copilot (គោលការណ៍ ប្រសិនបើមកតាមការអាប់ដេត)"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\WindowsCopilot",
+          "name": "TurnOffWindowsCopilot",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Policies\\Microsoft\\Windows\\WindowsCopilot",
+          "name": "TurnOffWindowsCopilot",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "RemoveOobeSetupTasks",
+      "os": "win10",
+      "category": "apps",
+      "level": "safe",
+      "default": true,
+      "bootWim": false,
+      "minBuild": 19045,
+      "name": {
+        "vi": "Bỏ màn hình nhắc \"hoàn tất thiết lập\"",
+        "en": "Remove the \"finish setting up\" nag screens",
+        "zh-CN": "去掉“完成设置”提醒界面",
+        "km": "លុបអេក្រង់រំលឹក \"បញ្ចប់ការរៀបចំ\""
+      },
+      "description": {
+        "vi": "Xoá tác vụ tự cài Outlook/DevHome khi cài đặt (nếu có)",
+        "en": "Remove OOBE auto-install tasks (Outlook, Dev Home) if present",
+        "zh-CN": "删除安装时自动安装 Outlook、Dev Home 的任务 (如存在)",
+        "km": "លុបភារកិច្ចដំឡើង Outlook, Dev Home ដោយស្វ័យប្រវត្តិពេលរៀបចំ (បើមាន)"
+      },
+      "deleteKey": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Microsoft\\WindowsUpdate\\Orchestrator\\UScheduler_Oobe\\OutlookUpdate",
+          "undo": { "action": "none", "note": "Windows Update re-creates the key when needed" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Microsoft\\WindowsUpdate\\Orchestrator\\UScheduler_Oobe\\DevHomeUpdate",
+          "undo": { "action": "none", "note": "Windows Update re-creates the key when needed" }
+        }
+      ]
+    },
+    {
+      "id": "OneDriveSetupOff",
+      "os": "win10",
+      "category": "apps",
+      "level": "aggressive",
+      "default": false,
+      "bootWim": false,
+      "name": {
+        "vi": "Không tự cài OneDrive cho người dùng mới",
+        "en": "Do not install OneDrive for new users",
+        "zh-CN": "不为新用户安装 OneDrive",
+        "km": "មិនដំឡើង OneDrive សម្រាប់អ្នកប្រើថ្មី"
+      },
+      "description": {
+        "vi": "Không tự cài OneDrive cho người dùng mới (tuỳ chọn)",
+        "en": "Do not auto-install OneDrive for new users (optional)",
+        "zh-CN": "不为新用户自动安装 OneDrive (可选)",
+        "km": "មិនដំឡើង OneDrive ដោយស្វ័យប្រវត្តិសម្រាប់អ្នកប្រើថ្មី (ស្រេចចិត្ត)"
+      },
+      "deleteValue": [
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+          "name": "OneDriveSetup",
+          "undo": { "action": "none", "note": "install OneDrive from onedrive.com when needed" }
+        }
+      ]
+    },
+    {
+      "id": "LabConfigBypass",
+      "os": "win11",
+      "category": "setup",
+      "level": "aggressive",
+      "default": false,
+      "bootWim": true,
+      "name": {
+        "vi": "Bỏ qua kiểm tra TPM, Secure Boot, RAM, CPU khi cài",
+        "en": "Skip the TPM / Secure Boot / RAM / CPU checks in Setup",
+        "zh-CN": "安装时跳过 TPM / 安全启动 / 内存 / CPU 检查",
+        "km": "រំលងការពិនិត្យ TPM / Secure Boot / RAM / CPU ពេលដំឡើង"
+      },
+      "description": {
+        "vi": "Ghi LabConfig vào boot.wim (Setup, index 2) và install.wim, cho phép nâng cấp trên máy không đủ chuẩn và ẩn thông báo phần cứng không được hỗ trợ. Máy không đủ chuẩn có thể không nhận bản cập nhật tính năng.",
+        "en": "LabConfig values in boot.wim (Setup, index 2) and install.wim, MoSetup upgrade flag, no \"unsupported hardware\" notice. Unsupported PCs may not get feature updates.",
+        "zh-CN": "在 boot.wim (安装程序, 索引 2) 和 install.wim 中写入 LabConfig, 允许在不受支持的硬件上升级并隐藏“硬件不受支持”提示。不受支持的电脑可能收不到功能更新。",
+        "km": "សរសេរ LabConfig ទៅក្នុង boot.wim (Setup, index 2) និង install.wim អនុញ្ញាតឱ្យអាប់គ្រេដលើម៉ាស៊ីនមិនគាំទ្រ និងលាក់សារ \"ផ្នែករឹងមិនគាំទ្រ\"។ ម៉ាស៊ីនមិនគាំទ្រអាចមិនទទួលបានការអាប់ដេតមុខងារ។"
+      },
+      "set": [
+        { "hive": "SYSTEM", "key": "Setup\\LabConfig", "name": "BypassTPMCheck", "type": "REG_DWORD", "value": "1", "undo": { "action": "delete" } },
+        {
+          "hive": "SYSTEM",
+          "key": "Setup\\LabConfig",
+          "name": "BypassSecureBootCheck",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        { "hive": "SYSTEM", "key": "Setup\\LabConfig", "name": "BypassRAMCheck", "type": "REG_DWORD", "value": "1", "undo": { "action": "delete" } },
+        { "hive": "SYSTEM", "key": "Setup\\LabConfig", "name": "BypassStorageCheck", "type": "REG_DWORD", "value": "1", "undo": { "action": "delete" } },
+        { "hive": "SYSTEM", "key": "Setup\\LabConfig", "name": "BypassCPUCheck", "type": "REG_DWORD", "value": "1", "undo": { "action": "delete" } },
+        {
+          "hive": "SYSTEM",
+          "key": "Setup\\MoSetup",
+          "name": "AllowUpgradesWithUnsupportedTPMOrCPU",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Control Panel\\UnsupportedHardwareNotificationCache",
+          "name": "SV1",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Control Panel\\UnsupportedHardwareNotificationCache",
+          "name": "SV2",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "DEFAULT",
+          "key": "Control Panel\\UnsupportedHardwareNotificationCache",
+          "name": "SV1",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "DEFAULT",
+          "key": "Control Panel\\UnsupportedHardwareNotificationCache",
+          "name": "SV2",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        }
+      ],
+      "bootSet": [
+        { "hive": "SYSTEM", "key": "Setup\\LabConfig", "name": "BypassTPMCheck", "type": "REG_DWORD", "value": "1", "undo": { "action": "delete" } },
+        {
+          "hive": "SYSTEM",
+          "key": "Setup\\LabConfig",
+          "name": "BypassSecureBootCheck",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        { "hive": "SYSTEM", "key": "Setup\\LabConfig", "name": "BypassRAMCheck", "type": "REG_DWORD", "value": "1", "undo": { "action": "delete" } },
+        { "hive": "SYSTEM", "key": "Setup\\LabConfig", "name": "BypassStorageCheck", "type": "REG_DWORD", "value": "1", "undo": { "action": "delete" } },
+        { "hive": "SYSTEM", "key": "Setup\\LabConfig", "name": "BypassCPUCheck", "type": "REG_DWORD", "value": "1", "undo": { "action": "delete" } }
+      ]
+    },
+    {
+      "id": "TelemetryMinimum",
+      "os": "win11",
+      "category": "privacy",
+      "level": "safe",
+      "default": false,
+      "bootWim": false,
+      "name": {
+        "vi": "Giảm thu thập dữ liệu chẩn đoán xuống mức thấp nhất",
+        "en": "Diagnostic data (telemetry) to the minimum",
+        "zh-CN": "遥测设为最低级别",
+        "km": "កំណត់ការប្រមូលទិន្នន័យវិនិច្ឆ័យត្រឹមកម្រិតទាបបំផុត"
+      },
+      "description": {
+        "vi": "Thu thập dữ liệu chẩn đoán ở mức thấp nhất mà phiên bản cho phép, tắt nhắc phản hồi và mã quảng cáo",
+        "en": "Telemetry to the minimum allowed by the edition (Home/Pro = Required, Ent/Edu = Security), no feedback prompts, no advertising ID",
+        "zh-CN": "遥测降至该版本允许的最低级别, 关闭反馈提示和广告 ID",
+        "km": "កំណត់ telemetry ទាបបំផុតដែលកំណែអនុញ្ញាត បិទការរំលឹកមតិកែលម្អ និង advertising ID"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\DataCollection",
+          "name": "AllowTelemetry",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\DataCollection",
+          "name": "DoNotShowFeedbackNotifications",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\AdvertisingInfo",
+          "name": "DisabledByGroupPolicy",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "AdvertisingIdOff",
+      "os": "both",
+      "category": "ads",
+      "level": "safe",
+      "default": false,
+      "bootWim": false,
+      "name": { "vi": "Tắt mã quảng cáo (Advertising ID)", "en": "Turn off the advertising ID", "zh-CN": "关闭广告 ID", "km": "បិទ Advertising ID" },
+      "description": {
+        "vi": "Ứng dụng không dùng được mã quảng cáo để cá nhân hoá quảng cáo (chính sách + người dùng mới)",
+        "en": "Apps cannot use the advertising ID for personalised ads (policy + new users)",
+        "zh-CN": "应用无法使用广告 ID 投放个性化广告 (策略 + 新用户)",
+        "km": "កម្មវិធីមិនអាចប្រើ Advertising ID សម្រាប់ពាណិជ្ជកម្មផ្ទាល់ខ្លួន (គោលការណ៍ + អ្នកប្រើថ្មី)"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\AdvertisingInfo",
+          "name": "DisabledByGroupPolicy",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo",
+          "name": "Enabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        }
+      ]
+    },
+    {
+      "id": "TailoredExperiencesOff",
+      "os": "both",
+      "category": "ads",
+      "level": "safe",
+      "default": false,
+      "bootWim": false,
+      "name": {
+        "vi": "Tắt trải nghiệm cá nhân hoá theo dữ liệu chẩn đoán",
+        "en": "Turn off tailored experiences",
+        "zh-CN": "关闭量身定制的体验",
+        "km": "បិទបទពិសោធន៍ផ្ទាល់ខ្លួនតាមទិន្នន័យវិនិច្ឆ័យ"
+      },
+      "description": {
+        "vi": "Microsoft không dùng dữ liệu chẩn đoán để gợi ý, quảng cáo cho người dùng mới",
+        "en": "Microsoft does not use diagnostic data for tips and ads (new users)",
+        "zh-CN": "Microsoft 不使用诊断数据向新用户推送提示和广告",
+        "km": "Microsoft មិនប្រើទិន្នន័យវិនិច្ឆ័យសម្រាប់គន្លឹះ និងពាណិជ្ជកម្ម (អ្នកប្រើថ្មី)"
+      },
+      "set": [
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableTailoredExperiencesWithDiagnosticData",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Privacy",
+          "name": "TailoredExperiencesWithDiagnosticDataEnabled",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        }
+      ]
+    },
+    {
+      "id": "WebSearchOff",
+      "os": "win11",
+      "category": "privacy",
+      "level": "safe",
+      "default": false,
+      "bootWim": false,
+      "name": {
+        "vi": "Tắt kết quả web / Bing trong ô tìm kiếm",
+        "en": "No web / Bing results in Windows search",
+        "zh-CN": "关闭 Windows 搜索中的网页 / Bing 结果",
+        "km": "បិទលទ្ធផលវេប / Bing ក្នុងការស្វែងរក Windows"
+      },
+      "description": {
+        "vi": "Ô tìm kiếm trên thanh tác vụ chỉ tìm trong máy (chính sách + người dùng mới)",
+        "en": "Taskbar search only searches this PC (policy + new users)",
+        "zh-CN": "任务栏搜索只搜索本机 (策略 + 新用户)",
+        "km": "ការស្វែងរកលើរបារភារកិច្ចស្វែងរកតែក្នុងម៉ាស៊ីននេះ (គោលការណ៍ + អ្នកប្រើថ្មី)"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\Windows Search",
+          "name": "DisableWebSearch",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\Windows Search",
+          "name": "ConnectedSearchUseWeb",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Policies\\Microsoft\\Windows\\Explorer",
+          "name": "DisableSearchBoxSuggestions",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "RecallOff",
+      "os": "win11",
+      "category": "ai",
+      "level": "safe",
+      "default": false,
+      "bootWim": false,
+      "minBuild": 26100,
+      "name": {
+        "vi": "Tắt Recall (ảnh chụp hoạt động bằng AI)",
+        "en": "Turn off Recall (AI snapshots)",
+        "zh-CN": "关闭 Recall (AI 快照)",
+        "km": "បិទ Recall (រូបថតសកម្មភាពដោយ AI)"
+      },
+      "description": {
+        "vi": "Chặn Recall lưu ảnh chụp màn hình để phân tích bằng AI (chính sách, Windows 11 24H2 trở lên)",
+        "en": "Recall cannot save screen snapshots for AI analysis (policy, Windows 11 24H2 and newer)",
+        "zh-CN": "禁止 Recall 保存屏幕快照用于 AI 分析 (策略, Windows 11 24H2 及更高版本)",
+        "km": "រារាំង Recall មិនឱ្យរក្សារូបថតអេក្រង់សម្រាប់ការវិភាគ AI (គោលការណ៍ Windows 11 24H2 ឡើងទៅ)"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\WindowsAI",
+          "name": "DisableAIDataAnalysis",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Windows\\WindowsAI",
+          "name": "AllowRecallEnablement",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        },
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Policies\\Microsoft\\Windows\\WindowsAI",
+          "name": "DisableAIDataAnalysis",
+          "type": "REG_DWORD",
+          "value": "1",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "WidgetsOff",
+      "os": "win11",
+      "category": "taskbar",
+      "level": "safe",
+      "default": false,
+      "bootWim": false,
+      "name": { "vi": "Tắt hẳn Widgets", "en": "Turn off Widgets completely", "zh-CN": "完全关闭小组件", "km": "បិទ Widgets ទាំងស្រុង" },
+      "description": {
+        "vi": "Ẩn nút Widgets và tắt bảng Widgets (chính sách)",
+        "en": "Hides the Widgets button and turns off the Widgets board (policy)",
+        "zh-CN": "隐藏小组件按钮并关闭小组件面板 (策略)",
+        "km": "លាក់ប៊ូតុង Widgets និងបិទផ្ទាំង Widgets (គោលការណ៍)"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Policies\\Microsoft\\Dsh",
+          "name": "AllowNewsAndInterests",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "delete" }
+        }
+      ]
+    },
+    {
+      "id": "OneDriveSetupOff",
+      "os": "win11",
+      "category": "apps",
+      "level": "aggressive",
+      "default": false,
+      "bootWim": false,
+      "name": {
+        "vi": "Không tự cài OneDrive cho người dùng mới",
+        "en": "Do not auto-install OneDrive for new users",
+        "zh-CN": "不为新用户安装 OneDrive",
+        "km": "មិនដំឡើង OneDrive សម្រាប់អ្នកប្រើថ្មី"
+      },
+      "description": {
+        "vi": "Không tự cài OneDrive cho người dùng mới (tuỳ chọn, có thể cài lại từ onedrive.com)",
+        "en": "Do not auto-install OneDrive for new users (optional, install it later from onedrive.com)",
+        "zh-CN": "不为新用户自动安装 OneDrive (可选, 之后可从 onedrive.com 安装)",
+        "km": "មិនដំឡើង OneDrive ដោយស្វ័យប្រវត្តិសម្រាប់អ្នកប្រើថ្មី (ស្រេចចិត្ត អាចដំឡើងពី onedrive.com)"
+      },
+      "deleteValue": [
+        {
+          "hive": "NTUSER",
+          "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+          "name": "OneDriveSetup",
+          "undo": { "action": "none", "note": "install OneDrive from onedrive.com when needed" }
+        }
+      ]
+    },
+    {
+      "id": "ReservedStorageOff",
+      "os": "both",
+      "category": "system",
+      "level": "aggressive",
+      "default": false,
+      "bootWim": false,
+      "minBuild": 18362,
+      "name": {
+        "vi": "Tắt bộ nhớ dự trữ (Reserved Storage, khoảng 7 GB)",
+        "en": "Turn off Reserved Storage (about 7 GB)",
+        "zh-CN": "关闭保留的存储 (约 7 GB)",
+        "km": "បិទ Reserved Storage (ប្រហែល 7 GB)"
+      },
+      "description": {
+        "vi": "Windows không giữ sẵn khoảng 7 GB cho bản cập nhật; khi ổ đầy, cập nhật có thể lỗi",
+        "en": "Windows does not keep about 7 GB aside for updates; on a full disk updates may fail",
+        "zh-CN": "Windows 不再为更新预留约 7 GB; 磁盘已满时更新可能失败",
+        "km": "Windows មិនទុកទំហំប្រហែល 7 GB សម្រាប់ការអាប់ដេត; ពេលថាសពេញ ការអាប់ដេតអាចបរាជ័យ"
+      },
+      "set": [
+        {
+          "hive": "SOFTWARE",
+          "key": "Microsoft\\Windows\\CurrentVersion\\ReserveManager",
+          "name": "ShippedWithReserves",
+          "type": "REG_DWORD",
+          "value": "0",
+          "undo": { "action": "set", "value": "1" }
+        }
+      ]
+    }
+  ]
+}
