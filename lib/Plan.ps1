@@ -338,14 +338,32 @@ function Format-WdlRegData {
 }
 
 $script:WdlPreviewText = @{
-    en = @{ head = 'Changes that will be made'; apps = 'Apps to remove'; tweaks = 'Settings to change'; reg = 'Registry'; svc = 'Services (start type)'; task = 'Scheduled tasks (disable)'
+    en = @{ head = 'Changes that will be made'; apps = 'Apps to remove'; tweaks = 'Settings to change'; other = 'Other changes'; sameItem = '{0} value(s) already have the target setting'; reg = 'Registry'; svc = 'Services (start type)'; task = 'Scheduled tasks (disable)'
         feat = 'Optional features (disable)'; special = 'System settings'; same = 'Already in place (left as is)'; skip = 'Skipped'
         none = '(nothing)'; allUsers = 'all users + new users'; curUser = 'signed-in user only'; set = 'set'; del = 'delete value'; delKey = 'delete key'
         total = 'Total: {0} change(s), {1} already in place, {2} skipped' }
-    vi = @{ head = 'Các thay đổi sẽ thực hiện'; apps = 'Ứng dụng sẽ gỡ'; tweaks = 'Thiết lập sẽ thay đổi'; reg = 'Registry'; svc = 'Dịch vụ (kiểu khởi động)'; task = 'Tác vụ theo lịch (tắt)'
+    vi = @{ head = 'Các thay đổi sẽ thực hiện'; apps = 'Ứng dụng sẽ gỡ'; tweaks = 'Thiết lập sẽ thay đổi'; other = 'Thay đổi khác'; sameItem = '{0} giá trị đã đúng sẵn'; reg = 'Registry'; svc = 'Dịch vụ (kiểu khởi động)'; task = 'Tác vụ theo lịch (tắt)'
         feat = 'Tính năng tuỳ chọn (tắt)'; special = 'Thiết lập hệ thống'; same = 'Đã đúng sẵn (giữ nguyên)'; skip = 'Bỏ qua'
         none = '(không có)'; allUsers = 'mọi người dùng + người dùng mới'; curUser = 'chỉ người dùng đang đăng nhập'; set = 'đặt'; del = 'xoá giá trị'; delKey = 'xoá key'
         total = 'Tổng: {0} thay đổi, {1} đã đúng sẵn, {2} bỏ qua' }
+}
+
+function Get-WdlPreviewTech {
+    # technical change lines of a plan, each tagged with its tweak id
+    param($Plan, $L)
+    $tech = @()
+    foreach ($r in @($Plan.Registry | Where-Object { -not $_.NoChange })) {
+        switch ($r.Kind) {
+            'RegSet' { $tech += @{ Id = $r.TweakId; T = ('{0}\{1}: {2} -> {3} ({4})' -f $r.Label, $r.Name, (Format-WdlRegData $r.Before), $r.DataText, $r.ValueKind) } }
+            'RegDeleteValue' { $tech += @{ Id = $r.TweakId; T = ('{0}\{1}: {2} ({3})' -f $r.Label, $r.Name, $L.del, (Format-WdlRegData $r.Before)) } }
+            'RegDeleteKey' { $tech += @{ Id = $r.TweakId; T = ('{0}: {1}' -f $r.Label, $L.delKey) } }
+        }
+    }
+    foreach ($x in @(@($Plan.Services) | Where-Object { $_ -and -not $_.NoChange })) { $tech += @{ Id = $x.TweakId; T = ('{0}: {1} -> {2} ({3})' -f $x.Name, $x.Before.StartType, $x.StartType, $L.svc) } }
+    foreach ($x in @(@($Plan.Tasks) | Where-Object { $_ -and -not $_.NoChange })) { $tech += @{ Id = $x.TweakId; T = ('{0}{1} ({2})' -f $x.Path, $x.Name, $L.task) } }
+    foreach ($x in @(@($Plan.Features) | Where-Object { $_ -and -not $_.NoChange })) { $tech += @{ Id = $x.TweakId; T = ('{0} ({1})' -f $x.Name, $L.feat) } }
+    foreach ($x in @(@($Plan.Special) | Where-Object { $_ -and -not $_.NoChange })) { $tech += @{ Id = $x.TweakId; T = ('{0}: {1} -> {2}' -f $x.Kind, $x.Before, $x.State) } }
+    return $tech
 }
 
 function Format-WdlPreview {
@@ -364,19 +382,7 @@ function Format-WdlPreview {
         foreach ($p in @($a.Packages)) { & $add ('      ' + $p) }
         foreach ($p in @($a.Provisioned)) { & $add ('      provisioned: ' + $p) }
     }
-    # settings grouped per tweak: name, what it does for the user, then the exact technical changes
-    $tech = @()
-    foreach ($r in @($Plan.Registry | Where-Object { -not $_.NoChange })) {
-        switch ($r.Kind) {
-            'RegSet' { $tech += @{ Id = $r.TweakId; T = ('{0}\{1}: {2} -> {3} ({4})' -f $r.Label, $r.Name, (Format-WdlRegData $r.Before), $r.DataText, $r.ValueKind) } }
-            'RegDeleteValue' { $tech += @{ Id = $r.TweakId; T = ('{0}\{1}: {2} ({3})' -f $r.Label, $r.Name, $L.del, (Format-WdlRegData $r.Before)) } }
-            'RegDeleteKey' { $tech += @{ Id = $r.TweakId; T = ('{0}: {1}' -f $r.Label, $L.delKey) } }
-        }
-    }
-    foreach ($x in @(@($Plan.Services) | Where-Object { $_ -and -not $_.NoChange })) { $tech += @{ Id = $x.TweakId; T = ('{0}: {1} -> {2} ({3})' -f $x.Name, $x.Before.StartType, $x.StartType, $L.svc) } }
-    foreach ($x in @(@($Plan.Tasks) | Where-Object { $_ -and -not $_.NoChange })) { $tech += @{ Id = $x.TweakId; T = ('{0}{1} ({2})' -f $x.Path, $x.Name, $L.task) } }
-    foreach ($x in @(@($Plan.Features) | Where-Object { $_ -and -not $_.NoChange })) { $tech += @{ Id = $x.TweakId; T = ('{0} ({1})' -f $x.Name, $L.feat) } }
-    foreach ($x in @(@($Plan.Special) | Where-Object { $_ -and -not $_.NoChange })) { $tech += @{ Id = $x.TweakId; T = ('{0}: {1} -> {2}' -f $x.Kind, $x.Before, $x.State) } }
+    $tech = @(Get-WdlPreviewTech -Plan $Plan -L $L)
     & $add ''
     & $add ('[' + $L.tweaks + ']')
     $shown = 0
@@ -408,5 +414,46 @@ function Format-WdlPreview {
     & $add ''
     & $add ($L.total -f $c.Total, $c.Unchanged, $c.Skipped)
     return $sb.ToString()
+}
+function Get-WdlPreviewModel {
+    <# Structured preview for the GUI: rows @{ Kind = Header | Item | Summary; Title; Body; Sub; Detail (lines); Count }. #>
+    param([Parameter(Mandatory = $true)]$Plan, [string]$Lang = 'en')
+    $L = $script:WdlPreviewText['en']; if ($Lang -eq 'vi') { $L = $script:WdlPreviewText['vi'] }
+    $rows = New-Object Collections.ArrayList
+    $c = Get-WdlPlanCounts $Plan
+    [void]$rows.Add(@{ Kind = 'Summary'; Title = ($L.total -f $c.Total, $c.Unchanged, $c.Skipped) })
+    $apps = @($Plan.Apps)
+    [void]$rows.Add(@{ Kind = 'Header'; Title = $L.apps; Count = $apps.Count })
+    foreach ($a in $apps) {
+        $sc = $L.curUser; if ($a.Scope -eq 'AllUsers') { $sc = $L.allUsers }
+        $det = @(@($a.Packages) | ForEach-Object { [string]$_ }) + @(@($a.Provisioned) | ForEach-Object { 'provisioned: ' + $_ })
+        [void]$rows.Add(@{ Kind = 'Item'; Title = (Get-WdlLangText $a.Names $Lang); Sub = ('{0}  ·  {1}' -f $a.Id, $sc); Detail = $det })
+    }
+    $tech = @(Get-WdlPreviewTech -Plan $Plan -L $L)
+    $items = @()
+    foreach ($tw in @($Plan.Tweaks)) {
+        $lines = @($tech | Where-Object { $_.Id -eq $tw.Id } | ForEach-Object { $_.T })
+        if ($lines.Count -eq 0) { continue }
+        $what = Get-WdlLangText $tw.Effects $Lang
+        if (-not $what) { $what = Get-WdlLangText $tw.Descriptions $Lang }
+        $items += @{ Kind = 'Item'; Title = (Get-WdlLangText $tw.Names $Lang); Body = $what; Detail = $lines }
+    }
+    $known = @(@($Plan.Tweaks) | ForEach-Object { $_.Id })
+    $other = @($tech | Where-Object { $known -notcontains $_.Id } | ForEach-Object { $_.T })
+    if ($other.Count) { $items += @{ Kind = 'Item'; Title = $L.other; Detail = $other } }
+    [void]$rows.Add(@{ Kind = 'Header'; Title = $L.tweaks; Count = $items.Count })
+    foreach ($x in $items) { [void]$rows.Add($x) }
+    $same = @(@($Plan.Registry) + @($Plan.Services) + @($Plan.Tasks) + @($Plan.Features) + @($Plan.Special) | Where-Object { $_ -and $_.NoChange })
+    if ($same.Count) {
+        $det = @($same | ForEach-Object { if ($_.Label) { '{0}\{1}' -f $_.Label, $_.Name } else { [string]$_.Name + [string]$_.Kind } })
+        [void]$rows.Add(@{ Kind = 'Header'; Title = $L.same; Count = $same.Count })
+        [void]$rows.Add(@{ Kind = 'Item'; Title = ($L.sameItem -f $same.Count); Detail = $det })
+    }
+    $sk = @($Plan.Skipped)
+    if ($sk.Count) {
+        [void]$rows.Add(@{ Kind = 'Header'; Title = $L.skip; Count = $sk.Count })
+        foreach ($x in $sk) { [void]$rows.Add(@{ Kind = 'Item'; Title = [string]$x.What; Sub = [string]$x.Reason }) }
+    }
+    return $rows.ToArray()
 }
 #endregion

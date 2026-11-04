@@ -415,12 +415,22 @@ function Get-WdlGuiOptions {
 
 function Show-WdlTextDialog {
     <# Read-only text window (preview). -ApplyText adds a confirm button; returns $true when it was pressed. #>
-    param([string]$Title, [string]$Text, [string]$ApplyText)
+    param([string]$Title, [string]$Text, [string]$ApplyText, [object[]]$Model)
     $d = New-Object WdlUi.TextDialog
     try {
         $d.Text = $Title; $d.lblHead.Text = $Title
         $d.ApplyTheme()
         $d.tbText.Text = $Text
+        if ($Model) {
+            $d.UsePreview()
+            foreach ($m in $Model) {
+                switch ([string]$m.Kind) {
+                    'Header' { $d.preview.AddHeader([string]$m.Title, [int]$m.Count) }
+                    'Summary' { $d.preview.AddSummary([string]$m.Title) }
+                    default { $d.preview.AddItem([string]$m.Title, [string]$m.Body, [string]$m.Sub, [string[]]@($m.Detail | Where-Object { $null -ne $_ })) }
+                }
+            }
+        }
         if ($ApplyText) { $d.btnOk.Text = $ApplyText; $d.AcceptButton = $d.btnOk } else { $d.btnOk.Visible = $false }
         $d.ApplyMono()
         return ($d.ShowDialog($script:ui.form) -eq 'OK')
@@ -449,12 +459,12 @@ function Start-WdlPreview {
     $a = @{ Session = $script:Session; AppIds = @($sel.Apps); TweakIds = @($sel.Tweaks); Options = $script:PendingOptions }
     $null = Start-WdlJob -Name 'preview' -Status (T 'status.previewing') -JobArgs $a -Script @'
 $plan = Get-WdlResolvedPlan -Session $JobArgs.Session -AppIds $JobArgs.AppIds -TweakIds $JobArgs.TweakIds -Options $JobArgs.Options
-$sync.Result = @{ Plan = $plan; Text = (Format-WdlPreview -Plan $plan -Lang $sync.UiLang); Counts = (Get-WdlPlanCounts $plan) }
+$sync.Result = @{ Plan = $plan; Text = (Format-WdlPreview -Plan $plan -Lang $sync.UiLang); Model = (Get-WdlPreviewModel -Plan $plan -Lang $sync.UiLang); Counts = (Get-WdlPlanCounts $plan) }
 '@ -OnDone {
         $r = $script:Sync.Result
         $btn = $null
         if ($script:PendingApply -and $r.Counts.Total -gt 0) { $btn = T 'dlg.applyBtn' }
-        $go = Show-WdlTextDialog -Title (T 'dlg.previewTitle') -Text $r.Text -ApplyText $btn
+        $go = Show-WdlTextDialog -Title (T 'dlg.previewTitle') -Text $r.Text -ApplyText $btn -Model @($r.Model)
         if ($script:PendingApply -and $r.Counts.Total -eq 0) { Show-WdlMsg (T 'msg.nothing') | Out-Null; return }
         if ($go) { Start-WdlRestorePoint -Plan $r.Plan }
     }

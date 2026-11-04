@@ -27,6 +27,11 @@ foreach ($lang in @('en', 'vi')) {
     $opt = New-WdlOptions -Session $s
     $plan = Get-WdlResolvedPlan -Session $s -AppIds $sel.Apps -TweakIds $sel.Tweaks -Options $opt
     [IO.File]::WriteAllText((Join-Path $OutDir "preview_$lang.txt"), (Format-WdlPreview -Plan $plan -Lang $lang), $enc)
+    $rows = foreach ($m in @(Get-WdlPreviewModel -Plan $plan -Lang $lang)) {
+        $det = @($m.Detail | Where-Object { $null -ne $_ }) -join [char]0x1f
+        (@([string]$m.Kind, [string]$m.Title, [string]$m.Body, [string]$m.Sub, [string][int]$m.Count, $det) -join "`t")
+    }
+    [IO.File]::WriteAllText((Join-Path $OutDir "model_$lang.tsv"), ($rows -join "`n"), $enc)
 }
 $log = Join-Path $OutDir 'apply.log'
 $script:WDL.LogPath = $log

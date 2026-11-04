@@ -14,7 +14,7 @@ mcs -langversion:5 -r:System.Windows.Forms.dll -r:System.Drawing.dll -r:"$WORK/W
 Xvfb :77 -screen 0 2400x1700x24 -dpi ${DPI:-96} >/dev/null 2>&1 &
 XPID=$!
 sleep 1
-for s in "mode en light" "modehover en light" "mode en dark" "modehover en dark" "mode vi light" "modehover vi light" "modehover vi dark" "simple en light" "simple vi dark" "advanced vi light" "advanced en dark" "preview vi light" "undo en dark" "message vi light" "message en dark" "msgok vi light" "msgok en dark" "preview vi dark" "previewset vi light" "previewset vi dark" "previewset en light" "undo vi light" "mode vi dark"; do
+for s in "mode en light" "modehover en light" "mode en dark" "modehover en dark" "mode vi light" "modehover vi light" "modehover vi dark" "simple en light" "simple vi dark" "advanced vi light" "advanced en dark" "preview vi light" "undo en dark" "message vi light" "message en dark" "msgok vi light" "msgok en dark" "preview vi dark" "previewset vi light" "previewset vi dark" "previewset en light" "previewopen vi dark" "previewopen en light" "previewbig en light" "undo vi light" "mode vi dark"; do
   set -- $s
   DISPLAY=:77 MONO_ENV_OPTIONS= mono "$WORK/Shots.exe" "$ROOT" "$OUT" "$1" "$2" "$3" "$WORK/data" || echo "failed: $s"
 done

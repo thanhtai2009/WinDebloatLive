@@ -1079,6 +1079,215 @@ namespace WdlUi
         }
     }
 
+    // ------------------------------------------------------------------ preview: owner-drawn virtual list of cards
+    public class WdlPreviewList : WdlScrollable
+    {
+        class Row
+        {
+            public int Kind;   // 0 header, 1 item, 2 summary
+            public string Title, Body, Sub; public string[] Detail; public int Count; public bool Open;
+            public int Y, H, LinkY, LinkH, LinkW, DetailY;
+            public List<string> Wrapped;
+        }
+        readonly List<Row> rows = new List<Row>();
+        int contentH, layoutW = -1, hotLink = -1;
+        public string ShowText = "Technical details", HideText = "Hide technical details";
+        readonly ContextMenuStrip menu = new ContextMenuStrip();
+        public WdlPreviewList()
+        {
+            menu.Items.Add("Copy", null, delegate { CopyAll(); });
+            ContextMenuStrip = menu;
+        }
+        public void Clear() { rows.Clear(); layoutW = -1; offset = 0; Invalidate(); }
+        public void AddHeader(string title, int count) { Row r = new Row(); r.Kind = 0; r.Title = title; r.Count = count; rows.Add(r); layoutW = -1; Invalidate(); }
+        public void AddSummary(string text) { Row r = new Row(); r.Kind = 2; r.Title = text; rows.Add(r); layoutW = -1; Invalidate(); }
+        public void AddItem(string title, string body, string sub, string[] detail)
+        {
+            Row r = new Row(); r.Kind = 1; r.Title = title ?? ""; r.Body = body; r.Sub = sub; r.Detail = detail ?? new string[0];
+            rows.Add(r); layoutW = -1; Invalidate();
+        }
+        public int ItemCount { get { return rows.Count; } }
+        public int RowKind(int i) { return rows[i].Kind; }
+        public bool HasDetail(int i) { return rows[i].Detail != null && rows[i].Detail.Length > 0; }
+        public void SetOpen(int index, bool open) { if (index >= 0 && index < rows.Count) { rows[index].Open = open; layoutW = -1; Invalidate(); } }
+        public void SetAllOpen(bool open) { foreach (Row r in rows) r.Open = open; layoutW = -1; Invalidate(); }
+        public int FirstItemWithDetail(int skip) { for (int i = 0; i < rows.Count; i++) if (rows[i].Kind == 1 && rows[i].Detail.Length > 0 && skip-- <= 0) return i; return -1; }
+        public int RowTop(int index) { Relayout(); return index >= 0 && index < rows.Count ? rows[index].Y : 0; }
+        public string PlainText()
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            foreach (Row r in rows)
+            {
+                if (r.Kind == 0) { sb.AppendLine(); sb.AppendLine("[" + r.Title + "] (" + r.Count + ")"); continue; }
+                if (r.Kind == 2) { sb.AppendLine(r.Title); continue; }
+                sb.AppendLine("  - " + r.Title);
+                if (!string.IsNullOrEmpty(r.Body)) sb.AppendLine("    " + r.Body);
+                if (!string.IsNullOrEmpty(r.Sub)) sb.AppendLine("    " + r.Sub);
+                foreach (string d in r.Detail) sb.AppendLine("      " + d);
+            }
+            return sb.ToString();
+        }
+        public void CopyAll() { try { string t = PlainText(); if (t.Length > 0) Clipboard.SetText(t); } catch (Exception) { } }
+        public override void ApplyTheme() { base.ApplyTheme(); layoutW = -1; Invalidate(); }
+        protected override int ContentHeight { get { Relayout(); return contentH; } }
+        const TextFormatFlags Wrap = TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding | TextFormatFlags.TextBoxControl;
+        int Inner { get { return Math.Max(Theme.S(120), ClientSize.Width - BarWidth - Theme.S(4) - Theme.S(18) * 2); } }
+        static int TextH(string t, Font f, int w) { return string.IsNullOrEmpty(t) ? 0 : TextRenderer.MeasureText(t, f, new Size(w, int.MaxValue), Wrap).Height; }
+        static List<string> CharWrap(string[] lines, Font f, int w)
+        {
+            List<string> o = new List<string>();
+            int cw = Math.Max(1, TextRenderer.MeasureText(new string('M', 20), f, Size.Empty, TextFormatFlags.NoPadding).Width / 20);
+            int cols = Math.Max(16, w / cw);
+            foreach (string l in lines)
+            {
+                if (l.Length <= cols) { o.Add(l); continue; }
+                int i = 0; bool first = true;
+                while (i < l.Length)
+                {
+                    int n = Math.Min(first ? cols : cols - 2, l.Length - i);
+                    o.Add((first ? "" : "  ") + l.Substring(i, n)); i += n; first = false;
+                }
+            }
+            return o;
+        }
+        int MonoLineH { get { return TextRenderer.MeasureText("Ag", Theme.Font(TextStyle.Mono)).Height + Theme.S(1); } }
+        void Relayout()
+        {
+            int w = ClientSize.Width;
+            if (w == layoutW) return;
+            layoutW = w;
+            int y = Theme.S(4), pad = Theme.S(18), inner = Inner;
+            Font ft = Theme.Font(TextStyle.BodyStrong), fb = Theme.Font(TextStyle.Body), fc = Theme.Font(TextStyle.Caption), fh = Theme.Font(TextStyle.Title), fl = Theme.Font(TextStyle.Label);
+            for (int i = 0; i < rows.Count; i++)
+            {
+                Row r = rows[i];
+                r.Y = y;
+                if (r.Kind == 2) { r.H = TextH(r.Title, fb, inner + pad * 2) + Theme.S(8); }
+                else if (r.Kind == 0) { r.H = TextRenderer.MeasureText("Ag", fh).Height + Theme.S(i == 0 ? 8 : 22) + Theme.S(8); }
+                else
+                {
+                    int h = pad + TextH(r.Title, ft, inner);
+                    if (!string.IsNullOrEmpty(r.Body)) h += Theme.S(4) + TextH(r.Body, fb, inner);
+                    if (!string.IsNullOrEmpty(r.Sub)) h += Theme.S(4) + TextH(r.Sub, fc, inner);
+                    r.LinkH = 0; r.Wrapped = null;
+                    if (r.Detail.Length > 0)
+                    {
+                        h += Theme.S(8);
+                        r.LinkY = h; r.LinkH = TextRenderer.MeasureText("Ag", fl).Height + Theme.S(8);
+                        r.LinkW = TextRenderer.MeasureText((r.Open ? HideText : ShowText), fl, Size.Empty, TextFormatFlags.NoPadding).Width + Theme.S(30);
+                        h += r.LinkH;
+                        if (r.Open) { r.Wrapped = CharWrap(r.Detail, Theme.Font(TextStyle.Mono), inner - Theme.S(16)); r.DetailY = h + Theme.S(4); h += Theme.S(4) + r.Wrapped.Count * MonoLineH + Theme.S(16); }
+                    }
+                    r.H = h + (r.LinkH > 0 && !r.Open ? Theme.S(10) : pad);
+                }
+                y += r.H + (r.Kind == 1 ? Theme.S(8) : 0);
+            }
+            contentH = y + Theme.S(8);
+            if (offset > MaxOffset) offset = MaxOffset;
+        }
+        protected override void OnResize(EventArgs e) { layoutW = -1; base.OnResize(e); }
+        int HitLink(Point p)
+        {
+            Relayout();
+            int y = p.Y + offset, x0 = Theme.S(18);
+            foreach (Row r in rows)
+            {
+                if (y < r.Y) break;
+                if (r.Kind != 1 || r.LinkH == 0 || y > r.Y + r.H) continue;
+                Rectangle lr = new Rectangle(x0 - Theme.S(6), r.Y + r.LinkY, r.LinkW + Theme.S(12), r.LinkH);
+                if (lr.Contains(p.X, y)) return rows.IndexOf(r);
+            }
+            return -1;
+        }
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            int h = OverBar(e.Location) ? -1 : HitLink(e.Location);
+            if (h != hotLink) { hotLink = h; Cursor = h >= 0 ? Cursors.Hand : Cursors.Default; Invalidate(); }
+        }
+        protected override void OnMouseLeave(EventArgs e) { base.OnMouseLeave(e); if (hotLink >= 0) { hotLink = -1; Invalidate(); } }
+        protected override void OnMouseClick(MouseEventArgs e)
+        {
+            base.OnMouseClick(e);
+            if (e.Button != MouseButtons.Left) return;
+            int i = HitLink(e.Location);
+            if (i >= 0) SetOpen(i, !rows[i].Open);
+        }
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            if (e.Control && e.KeyCode == Keys.C) CopyAll();
+            if (e.KeyCode == Keys.PageDown) ScrollTo(offset + ClientSize.Height);
+            if (e.KeyCode == Keys.PageUp) ScrollTo(offset - ClientSize.Height);
+            if (e.KeyCode == Keys.Down) ScrollTo(offset + Theme.S(40));
+            if (e.KeyCode == Keys.Up) ScrollTo(offset - Theme.S(40));
+            if (e.KeyCode == Keys.Home) ScrollTo(0);
+            if (e.KeyCode == Keys.End) ScrollToEnd();
+        }
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Relayout();
+            Graphics g = e.Graphics;
+            Theme.Smooth(g);
+            int pad = Theme.S(18), inner = Inner, w = ClientSize.Width - BarWidth - Theme.S(4);
+            Font ft = Theme.Font(TextStyle.BodyStrong), fb = Theme.Font(TextStyle.Body), fc = Theme.Font(TextStyle.Caption), fh = Theme.Font(TextStyle.Title), fl = Theme.Font(TextStyle.Label), fm = Theme.Font(TextStyle.Mono);
+            int top = offset, bottom = offset + ClientSize.Height;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                Row r = rows[i];
+                if (r.Y + r.H < top) continue;
+                if (r.Y > bottom) break;
+                int y = r.Y - offset;
+                if (r.Kind == 2) { TextRenderer.DrawText(g, r.Title, fb, new Rectangle(0, y, w, r.H), Theme.OnSurfaceVariant, Wrap); continue; }
+                if (r.Kind == 0)
+                {
+                    int hh = TextRenderer.MeasureText("Ag", fh).Height, ty = y + r.H - hh - Theme.S(8);
+                    Size ts = TextRenderer.MeasureText(r.Title, fh, Size.Empty, TextFormatFlags.NoPadding);
+                    TextRenderer.DrawText(g, r.Title, fh, new Point(Theme.S(2), ty), Theme.OnSurface, TextFormatFlags.NoPadding | TextFormatFlags.NoPrefix);
+                    string n = r.Count.ToString();
+                    Size ns = TextRenderer.MeasureText(n, fl, Size.Empty, TextFormatFlags.NoPadding);
+                    RectangleF chip = new RectangleF(Theme.S(2) + ts.Width + Theme.S(10), ty + (hh - ns.Height - Theme.S(6)) / 2f, ns.Width + Theme.S(16), ns.Height + Theme.S(6));
+                    using (GraphicsPath p = Theme.Round(chip, chip.Height / 2f)) using (SolidBrush b = new SolidBrush(Theme.SecondaryContainer)) g.FillPath(b, p);
+                    TextRenderer.DrawText(g, n, fl, new Point((int)(chip.X + Theme.S(8)), (int)(chip.Y + Theme.S(3))), Theme.OnSecondaryContainer, TextFormatFlags.NoPadding);
+                    continue;
+                }
+                using (GraphicsPath p = Theme.Round(new RectangleF(0.5f, y + 0.5f, w - 1f, r.H - 1f), Theme.SF(20))) using (SolidBrush b = new SolidBrush(Theme.Card)) g.FillPath(b, p);
+                int cy = y + pad, x = pad;
+                int th = TextH(r.Title, ft, inner);
+                TextRenderer.DrawText(g, r.Title, ft, new Rectangle(x, cy, inner, th), Theme.OnSurface, Wrap); cy += th;
+                if (!string.IsNullOrEmpty(r.Body)) { cy += Theme.S(4); int bh = TextH(r.Body, fb, inner); TextRenderer.DrawText(g, r.Body, fb, new Rectangle(x, cy, inner, bh), Theme.OnSurface, Wrap); cy += bh; }
+                if (!string.IsNullOrEmpty(r.Sub)) { cy += Theme.S(4); int sh = TextH(r.Sub, fc, inner); TextRenderer.DrawText(g, r.Sub, fc, new Rectangle(x, cy, inner, sh), Theme.OnSurfaceVariant, Wrap); cy += sh; }
+                if (r.LinkH > 0)
+                {
+                    int ly = y + r.LinkY;
+                    if (hotLink == i) using (GraphicsPath p = Theme.Round(new RectangleF(x - Theme.S(6), ly, r.LinkW + Theme.S(12), r.LinkH), r.LinkH / 2f)) using (SolidBrush b = new SolidBrush(Theme.Alpha(Theme.Primary, 0.10f))) g.FillPath(b, p);
+                    float cs = Theme.SF(8), cx = x + Theme.SF(4), cmy = ly + r.LinkH / 2f;
+                    using (Pen pen = new Pen(Theme.Primary, Theme.SF(1.8f)))
+                    {
+                        pen.StartCap = LineCap.Round; pen.EndCap = LineCap.Round; pen.LineJoin = LineJoin.Round;
+                        if (r.Open) g.DrawLines(pen, new PointF[] { new PointF(cx - cs / 2f, cmy - cs / 4f), new PointF(cx, cmy + cs / 4f), new PointF(cx + cs / 2f, cmy - cs / 4f) });
+                        else g.DrawLines(pen, new PointF[] { new PointF(cx - cs / 4f, cmy - cs / 2f), new PointF(cx + cs / 4f, cmy), new PointF(cx - cs / 4f, cmy + cs / 2f) });
+                    }
+                    TextRenderer.DrawText(g, r.Open ? HideText : ShowText, fl, new Rectangle(x + Theme.S(18), ly, r.LinkW, r.LinkH), Theme.Primary, TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
+                    if (r.Open && r.Wrapped != null)
+                    {
+                        int dy = y + r.DetailY, lh = MonoLineH;
+                        RectangleF box = new RectangleF(x, dy, inner, r.Wrapped.Count * lh + Theme.S(12));
+                        using (GraphicsPath p = Theme.Round(box, Theme.SF(12))) using (SolidBrush b = new SolidBrush(Theme.CardHigh)) g.FillPath(b, p);
+                        for (int k = 0; k < r.Wrapped.Count; k++)
+                        {
+                            int ry = dy + Theme.S(6) + k * lh;
+                            if (ry + lh < 0 || ry > ClientSize.Height) continue;
+                            TextRenderer.DrawText(g, r.Wrapped[k], fm, new Point(x + Theme.S(8), ry), Theme.OnSurfaceVariant, TextFormatFlags.NoPadding | TextFormatFlags.NoPrefix);
+                        }
+                    }
+                }
+            }
+            PaintBar(g);
+        }
+        protected override void Dispose(bool disposing) { if (disposing) menu.Dispose(); base.Dispose(disposing); }
+    }
+
     // ------------------------------------------------------------------ dropdown (pill field + themed menu)
     public class WdlDropdown : Control, IThemed
     {
@@ -1577,24 +1786,41 @@ namespace WdlUi
     {
         public WdlLabel lblHead;
         public WdlTextView tbText;
-        public WdlButton btnOk, btnClose;
+        public WdlPreviewList preview;
+        public WdlButton btnOk, btnClose, btnCopy;
+        readonly WdlCard card;
         public TextDialog()
         {
             FitToScreen(940, 680, 600, 420); ShowInTaskbar = false; StartPosition = FormStartPosition.CenterParent; MinimizeBox = false;
-            TableLayoutPanel t = L.Table(1, 3); t.Dock = DockStyle.Fill; t.Padding = L.M(24, 20, 24, 18);
+            TableLayoutPanel t = L.Table(1, 3); t.Dock = DockStyle.Fill; t.Padding = L.M(24, 20, 24, 20);
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             t.RowStyles.Add(new RowStyle(SizeType.AutoSize)); t.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             lblHead = new WdlLabel("", TextStyle.Headline, ColorRole.OnSurface); lblHead.Margin = L.M(4, 0, 0, 14);
-            WdlCard c = new WdlCard(); c.Fill = Surface.CardHigh; c.Radius = 24; c.Dock = DockStyle.Fill; c.Padding = L.M(18, 14, 8, 14); c.Margin = Padding.Empty;
+            card = new WdlCard(); card.Fill = Surface.CardHigh; card.Radius = 24; card.Dock = DockStyle.Fill; card.Padding = L.M(18, 14, 8, 14); card.Margin = Padding.Empty;
             tbText = new WdlTextView(); tbText.Dock = DockStyle.Fill;
-            c.Controls.Add(tbText);
-            FlowLayoutPanel b = L.Flow(false, false); b.Anchor = AnchorStyles.Right; b.Margin = L.M(0, 16, 0, 0);
+            card.Controls.Add(tbText);
+            preview = new WdlPreviewList(); preview.Dock = DockStyle.Fill; preview.Margin = Padding.Empty; preview.Visible = false;
+            Panel host = new Panel(); host.Dock = DockStyle.Fill; host.Margin = Padding.Empty;
+            host.Controls.Add(card); host.Controls.Add(preview);
+            TableLayoutPanel b = L.Table(2, 1); b.Dock = DockStyle.Fill; b.AutoSize = true; b.Margin = L.M(0, 16, 0, 0);
+            b.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); b.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            btnCopy = new WdlButton("@dlg.copy", ButtonKind.Text, "check-all"); btnCopy.Anchor = AnchorStyles.Left; btnCopy.Visible = false;
+            btnCopy.Click += delegate { preview.CopyAll(); };
+            FlowLayoutPanel r = L.Flow(false, false); r.Anchor = AnchorStyles.Right;
             btnClose = new WdlButton("@dlg.close", ButtonKind.Outlined, null); btnClose.DialogResult = DialogResult.Cancel;
             btnOk = new WdlButton("", ButtonKind.Filled, "broom"); btnOk.DialogResult = DialogResult.OK; btnOk.Margin = L.M(10, 0, 0, 0);
-            b.Controls.Add(btnClose); b.Controls.Add(btnOk);
-            t.Controls.Add(lblHead, 0, 0); t.Controls.Add(c, 0, 1); t.Controls.Add(b, 0, 2);
+            r.Controls.Add(btnClose); r.Controls.Add(btnOk);
+            b.Controls.Add(btnCopy, 0, 0); b.Controls.Add(r, 1, 0);
+            t.Controls.Add(lblHead, 0, 0); t.Controls.Add(host, 0, 1); t.Controls.Add(b, 0, 2);
             Controls.Add(t);
             CancelButton = btnClose;
+        }
+        // structured preview cards instead of the plain text view
+        public void UsePreview()
+        {
+            card.Visible = false; preview.Visible = true; btnCopy.Visible = true;
+            preview.ShowText = Theme.T("dlg.techShow"); preview.HideText = Theme.T("dlg.techHide");
+            preview.ApplyTheme();
         }
         public void ApplyMono() { tbText.ScrollTo(0); }
     }

@@ -112,6 +112,11 @@ $txtVi = Format-WdlPreview -Plan $plan -Lang 'vi'
 Assert ($txtVi -match 'Ứng dụng sẽ gỡ') 'preview in Vietnamese'
 Assert ($txtVi -match 'Thiết lập sẽ thay đổi' -and $txtVi -match 'Ẩn Copilot khỏi thanh tác vụ' -and $txt -match 'Hides Copilot from the taskbar') 'preview explains each setting in plain language (en + vi)'
 Assert ($txt -match '(?m)^  - Turn off Copilot.*\r?\n    Hides Copilot.*\r?\n      HK') 'preview: name, effect, then the technical change'
+$model = @(Get-WdlPreviewModel -Plan $plan -Lang 'vi')
+$cop = @($model | Where-Object { $_.Kind -eq 'Item' -and $_.Body -like 'Ẩn Copilot*' })[0]
+Assert ($model.Count -gt 5 -and @($model | Where-Object { $_.Kind -eq 'Header' }).Count -ge 2 -and $cop -and @($cop.Detail).Count -ge 1 -and @($cop.Detail)[0] -match 'WindowsCopilot') 'preview model: sections, plain-language text and technical details per item'
+$appHdr = @($model | Where-Object { $_.Kind -eq 'Header' })[0]
+Assert ($appHdr.Count -eq @($plan.Apps).Count) 'preview model: section count matches the plan'
 $bdir = Join-Path $script:MockDataDir 'backups'
 $res = Invoke-WdlApply -Session $s -Plan $plan -RestorePoint (New-WdlObj @{ Ok = $true; Sequence = 6 }) -BackupDir $bdir
 Assert ($res.Failed -eq 0 -and $res.Done -gt 10 -and $res.Reboot) "apply finished ($($res.Done) changes, $($res.Failed) failed)"

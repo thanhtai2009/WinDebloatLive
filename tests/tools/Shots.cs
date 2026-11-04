@@ -107,6 +107,8 @@ static class Shots
         foreach (Control x in c.Controls) n += Bad(x);
         return n;
     }
+    static bool IsHeader(WdlPreviewList l, int i) { return l.RowKind(i) == 0; }
+    static int CountItemsBefore(WdlPreviewList l, int idx) { int n = 0; for (int i = 0; i < idx; i++) if (l.RowKind(i) == 1 && l.HasDetail(i)) n++; return n; }
     static int disposedOpen;
     static ContextMenuStrip MenuOf(WdlDropdown d)
     {
@@ -175,17 +177,46 @@ static class Shots
         {
             MessageDialog d = new MessageDialog(T("msg.rpConsent", "C:"), "WinDebloat Live", true, Glyph.Warning); d.ApplyTheme(); Save(d, file); return Environment.ExitCode;
         }
-        if (shot == "preview" || shot == "previewset")
+        if (shot.StartsWith("preview"))
         {
             TextDialog d = new TextDialog(); d.Text = T("dlg.previewTitle"); d.lblHead.Text = T("dlg.previewTitle"); d.btnOk.Text = T("dlg.applyBtn");
-            d.tbText.Text = File.ReadAllText(Path.Combine(data, "preview_" + lang + ".txt")).Replace("\n", "\r\n");
-            d.ApplyTheme(); d.btnOk.Text = T("dlg.applyBtn"); d.ApplyMono();
-            if (shot == "previewset")
+            d.ApplyTheme(); d.btnOk.Text = T("dlg.applyBtn"); d.UsePreview();
+            if (shot == "previewbig")
             {
-                string[] ls = d.tbText.Text.Replace("\r", "").Split('\n');
-                int idx = 0, seen = 0;
-                for (int i = 0; i < ls.Length; i++) if (ls[i].StartsWith("[") && ++seen == 2) { idx = i; break; }
-                d.tbText.ScrollTo(idx * (TextRenderer.MeasureText("Ag", Theme.Font(TextStyle.Mono)).Height + Theme.S(2)));
+                d.preview.AddSummary("300 items");
+                d.preview.AddHeader(T("grp.tweaks"), 300);
+                for (int i = 0; i < 300; i++)
+                    d.preview.AddItem("Setting " + i, "Plain-language explanation of what setting number " + i + " changes for the user, long enough to wrap on narrow windows.", null,
+                        new string[] { @"HKLM\SOFTWARE\Policies\Microsoft\Windows\Very\Long\Path\Segment\Value" + i + ": (not set) -> 1 (DWord)", "Service" + i + ": Manual -> Disabled" });
+                d.preview.SetAllOpen(true);
+            }
+            else
+            {
+                foreach (string line in File.ReadAllLines(Path.Combine(data, "model_" + lang + ".tsv")))
+                {
+                    string[] p = line.Split('\t');
+                    string[] det = p.Length > 5 && p[5].Length > 0 ? p[5].Split('\u001f') : new string[0];
+                    if (p[0] == "Header") d.preview.AddHeader(p[1], int.Parse(p[4]));
+                    else if (p[0] == "Summary") d.preview.AddSummary(p[1]);
+                    else d.preview.AddItem(p[1], p[2], p[3], det);
+                }
+            }
+            if (shot == "previewset" || shot == "previewopen")
+            {
+                int idx = -1, seen = 0;
+                for (int i = 0; i < d.preview.ItemCount; i++) { if (d.preview.RowTop(i) >= 0 && IsHeader(d.preview, i) && ++seen == 2) { idx = i; break; } }
+                if (shot == "previewopen") d.preview.SetOpen(d.preview.FirstItemWithDetail(idx < 0 ? 0 : CountItemsBefore(d.preview, idx) + 1), true);
+                d.Show(); Application.DoEvents();
+                d.preview.ScrollTo(d.preview.RowTop(idx) - Theme.S(4));
+            }
+            if (shot == "previewbig")
+            {
+                d.Show(); Application.DoEvents();
+                System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
+                for (int k = 0; k < 40; k++) { d.preview.ScrollTo(k * Theme.S(300)); d.preview.Refresh(); }
+                d.Width += Theme.S(40); d.preview.Refresh();
+                Console.WriteLine("previewbig: 300 expanded items, 40 scroll repaints + 1 relayout in " + sw.ElapsedMilliseconds + " ms");
+                if (sw.ElapsedMilliseconds > 4000) Environment.ExitCode = 3;
             }
             Save(d, file); return Environment.ExitCode;
         }
