@@ -117,8 +117,6 @@ namespace WdlUi
         // null = Latin / Vietnamese UI (Segoe UI Variable on Windows 11, Segoe UI on Windows 10); else a script font
         public static void SetFamily(string scriptFamily)
         {
-            foreach (Font f in fonts.Values) f.Dispose();
-            fonts.Clear();
             MonoFamily = First("Cascadia Mono", "Consolas", "DejaVu Sans Mono") ?? "Courier New";
             if (!string.IsNullOrEmpty(scriptFamily) && Has(scriptFamily))
             {
@@ -131,7 +129,8 @@ namespace WdlUi
 
         public static Font Font(TextStyle s)
         {
-            string key = s.ToString();
+            // fonts stay alive for the whole process: controls may still hold the previous family
+            string key = s + "|" + Family + "|" + StrongFamily + "|" + DisplayFamily + "|" + MonoFamily;
             Font f;
             if (fonts.TryGetValue(key, out f)) return f;
             string fam = Family; float size = 10f; FontStyle st = FontStyle.Regular; bool strong = false, display = false;
@@ -1275,7 +1274,7 @@ namespace WdlUi
         public Control pnlSimple, pnlAdv;
         public WdlCard cardHero, cardApps, cardTweaks, cardOptions, cardLog;
         public WdlButton btnGo, btnSimplePreview, btnAppDef, btnAppAll, btnAppNone, btnPresetApply, btnPreview, btnApply, btnUndo, btnRescan, btnCancel,
-            btnLogToggle, btnLogs, btnBackups;
+            btnLogToggle, btnLogs, btnBackups, btnRulesCheck;
         public WdlList clbApps, clbTweaks;
         public WdlToggle rbAll, rbCur, chkRestore, chkProtect, chkDefaultUser, chkRules;
         public WdlProgress pb;
@@ -1374,7 +1373,8 @@ namespace WdlUi
             btnLogs = new WdlButton("@lnk.log", ButtonKind.Text, "folder-open"); btnLogs.Small = true;
             btnBackups = new WdlButton("@lnk.backups", ButtonKind.Text, "folder"); btnBackups.Small = true;
             lblRules = new WdlLabel("", TextStyle.Caption, ColorRole.OnSurfaceVariant); lblRules.IconName = "shield-check"; lblRules.Margin = L.M(12, 8, 0, 0);
-            ft.Controls.Add(btnLogs); ft.Controls.Add(btnBackups); ft.Controls.Add(lblRules);
+            btnRulesCheck = new WdlButton("@btn.rulesCheck", ButtonKind.Text, "refresh"); btnRulesCheck.Small = true; btnRulesCheck.Margin = L.M(4, 0, 0, 0);
+            ft.Controls.Add(btnLogs); ft.Controls.Add(btnBackups); ft.Controls.Add(lblRules); ft.Controls.Add(btnRulesCheck);
 
             root.Controls.Add(hdr, 0, 0); root.Controls.Add(body, 0, 1); root.Controls.Add(cardOptions, 0, 2);
             root.Controls.Add(act, 0, 3); root.Controls.Add(cardLog, 0, 4); root.Controls.Add(ft, 0, 5);

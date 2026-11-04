@@ -17,6 +17,7 @@ for s in "mode en light" "modehover en light" "mode en dark" "modehover en dark"
   set -- $s
   DISPLAY=:77 MONO_ENV_OPTIONS= mono "$WORK/Shots.exe" "$ROOT" "$OUT" "$1" "$2" "$3" "$WORK/data" || echo "failed: $s"
 done
+DISPLAY=:77 mono "$WORK/Shots.exe" "$ROOT" "$OUT" stress en light "$WORK/data" || { kill $XPID; echo "stress failed"; exit 1; }
 kill $XPID 2>/dev/null || true
 rm -rf "$WORK"
 ls -1 "$OUT"

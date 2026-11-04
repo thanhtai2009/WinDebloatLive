@@ -59,6 +59,43 @@ static class Shots
         f.Hide();
     }
 
+    // a font that was disposed while a control still holds it throws "Parameter is not valid" on Windows
+    static bool Disposed(Font f)
+    {
+        foreach (string n in new string[] { "nativeFont", "fontObject" })
+        {
+            System.Reflection.FieldInfo fi = typeof(Font).GetField(n, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (fi != null) return (IntPtr)fi.GetValue(f) == IntPtr.Zero;
+        }
+        return false;
+    }
+    static int Bad(Control c)
+    {
+        int n = Disposed(c.Font) ? 1 : 0;
+        foreach (Control x in c.Controls) n += Bad(x);
+        return n;
+    }
+    static int Stress()
+    {
+        MainForm f = new MainForm(); f.ApplyTheme(); f.Show();
+        ModeDialog d = new ModeDialog(); d.ApplyTheme(); d.Show();
+        string[] fams = { null, "DejaVu Sans", "Noto Sans", null };
+        int bad = 0;
+        for (int i = 0; i < 40; i++)
+        {
+            Theme.Init(i % 2 == 1, Theme.IconDir);
+            Theme.SetFamily(fams[i % fams.Length]);
+            f.SetMode(i % 3 == 0);
+            f.ApplyTheme(); d.ApplyTheme();
+            d.cardSimple.Hover(i % 2 == 0);
+            f.Size = new Size(Theme.S(900 + (i % 4) * 100), Theme.S(700 + (i % 3) * 80));
+            for (int k = 0; k < 3; k++) Application.DoEvents();
+            bad += Bad(f) + Bad(d);
+        }
+        Console.WriteLine(bad == 0 ? "stress: OK (40 rounds)" : "stress: " + bad + " control(s) hold a disposed font");
+        return bad == 0 ? 0 : 1;
+    }
+
     [STAThread]
     static int Main(string[] a)
     {
@@ -74,6 +111,7 @@ static class Shots
         {
             ModeDialog d = new ModeDialog(); d.ApplyTheme(); if (shot == "modehover") d.cardSimple.Hover(true); Save(d, file); return 0;
         }
+        if (shot == "stress") return Stress();
         if (shot == "message")
         {
             MessageDialog d = new MessageDialog(T("msg.rpConsent", "C:"), "WinDebloat Live", true, Glyph.Warning); d.ApplyTheme(); Save(d, file); return 0;

@@ -559,6 +559,16 @@ function Update-WdlRules {
     return (New-WdlObj $res)
 }
 
+function Get-WdlRulesResultKey {
+    param($Result)
+    switch ([string]$Result.Status) {
+        'Updated' { return 'rules.resUpdated' }
+        'UpToDate' { return 'rules.resLatest' }
+        'Rejected' { return 'rules.resRejected' }
+        default { return 'rules.resOffline' }
+    }
+}
+
 function Write-WdlRulesResult {
     param($Result)
     if (-not $Result) { return }

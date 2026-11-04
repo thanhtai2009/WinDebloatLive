@@ -25,7 +25,7 @@ WinDebloat Live gỡ các ứng dụng cài sẵn và tắt quảng cáo, gợi 
 máy Windows 10 hoặc Windows 11 đang chạy. Công cụ đi kèm WinDebloat Tool (vốn áp dụng các quy tắc này vào bộ cài)
 và dùng chung danh sách ứng dụng và tinh chỉnh. Chế độ **Đơn giản** dọn dẹp máy bằng một nút bấm theo mặc định an
 toàn; chế độ **Nâng cao** cho phép chọn từng ứng dụng, từng thiết lập và xem trước chính xác các thay đổi. Giao
-diện theo chế độ sáng/tối của Windows, hiển thị sắc nét trên màn hình DPI cao, có tiếng Việt và tiếng Anh,
+diện theo chế độ sáng/tối của Windows, hiển thị sắc nét trên màn hình DPI cao, có tiếng Việt (mặc định) và tiếng Anh,
 một phần tiếng Trung và tiếng Khmer.
 
 ## Điểm nổi bật

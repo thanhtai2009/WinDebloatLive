@@ -70,6 +70,7 @@ Assert ($r.Status -eq 'Rejected' -and $r.ElapsedMs -lt 1000) 'foreign URL reject
 $l = New-Object Net.Sockets.TcpListener ([Net.IPAddress]::Loopback), 0; $l.Start(); $dead = $l.LocalEndpoint.Port; $l.Stop()
 $r = Update-WdlRules -BaseUrl "http://127.0.0.1:$dead/" -AllowTestUrl
 Assert ($r.Status -eq 'Offline' -and $r.ElapsedMs -lt 10000) "offline: status $($r.Status) in $($r.ElapsedMs) ms"
+Assert ((Get-WdlRulesResultKey $r) -eq 'rules.resOffline') 'manual check: unreachable server shows the offline message'
 Assert ((Get-WdlActiveRules).Source -eq 'bundled') 'offline: bundled rules stay active'
 
 # ---------------- local server ----------------
@@ -86,12 +87,14 @@ else {
         Publish -Version '2026.11.1.1'
         $r = Update-WdlRules -BaseUrl $url -AllowTestUrl
         Assert ($r.Status -eq 'UpToDate') "same version: UpToDate ($($r.Status) $($r.Error))"
+        Assert ((Get-WdlRulesResultKey $r) -eq 'rules.resLatest') 'manual check: same version shows already latest'
         Publish -Version '2099.1.1.1' -MinTool '9.0.0'
         $r = Update-WdlRules -BaseUrl $url -AllowTestUrl
         Assert ($r.Status -eq 'UpToDate' -and (Get-WdlActiveRules).Source -eq 'bundled') "minToolVersion above $($script:WDL.RulesCompat): not installed ($($r.Status))"
         Publish -Version '2099.1.1.1' -BadHash ('0' * 64)
         $r = Update-WdlRules -BaseUrl $url -AllowTestUrl
         Assert ($r.Status -eq 'Rejected' -and (Get-WdlActiveRules).Source -eq 'bundled') "SHA256 mismatch: Rejected ($($r.Error))"
+        Assert ((Get-WdlRulesResultKey $r) -eq 'rules.resRejected') 'manual check: bad hash shows rejected'
         Publish -Version '2099.1.1.1' -Tweaks (New-TweakWithOp $run)
         $r = Update-WdlRules -BaseUrl $url -AllowTestUrl
         Assert ($r.Status -eq 'Rejected' -and (Get-WdlActiveRules).Source -eq 'bundled') 'policy violation in a correctly hashed download: Rejected'
@@ -101,6 +104,7 @@ else {
         $r = Update-WdlRules -BaseUrl $url -AllowTestUrl
         $ar = Get-WdlActiveRules
         Assert ($r.Status -eq 'Updated' -and $ar.Source -eq 'downloaded' -and [string]$ar.Version -eq '2099.1.1.1') "valid newer rules: Updated and active ($($r.Status) $($r.Error))"
+        Assert ((Get-WdlRulesResultKey $r) -eq 'rules.resUpdated' -and [string](Get-WdlConfig).RulesVersion -eq '2099.1.1.1') 'manual check: newer rules shown as updated and reloaded by Get-WdlConfig'
         Assert ((Test-WdlPathInside -Path $ar.Dir -Parent (Join-Path $tool 'rules'))) 'downloaded rules stored in <tool>\rules only'
         $cfg = Get-WdlConfig
         Assert ($cfg.RulesSource -eq 'downloaded' -and @($cfg.Apps | Where-Object { $_.Id -eq 'Contoso.TestApp' }).Count -eq 1) 'Get-WdlConfig uses the downloaded rules'

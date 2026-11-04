@@ -27,12 +27,8 @@ function Import-WdlLang {
 }
 
 function Get-WdlDefaultLanguage {
-    # Vietnamese Windows -> vi, Chinese -> zh-CN, Khmer -> km, else English
-    $c = [Globalization.CultureInfo]::CurrentUICulture.Name
-    if ($c -like 'vi*') { return 'vi' }
-    if ($c -like 'zh*') { return 'zh-CN' }
-    if ($c -like 'km*') { return 'km' }
-    return 'en'
+    # Vietnamese until the user picks and saves another language
+    return 'vi'
 }
 
 function Set-WdlLanguage {
@@ -165,15 +161,18 @@ function Start-WdlJob {
 }
 
 function Start-WdlRulesUpdate {
-    # rules check at launch in its own runspace (at most 10 s); never blocks the UI or a task
-    if ([string]$script:Settings.RulesAutoUpdate -eq '0') { Write-WdlLog -En 'Rules auto-update is off' -Vi 'Đã tắt tự cập nhật bộ quy tắc'; return }
+    # rules check in its own runspace (at most 10 s); never blocks the UI or a task. -Manual: from the button
+    param([switch]$Manual)
+    if ($script:RulesJob) { return }
+    if (-not $Manual -and [string]$script:Settings.RulesAutoUpdate -eq '0') { Write-WdlLog -En 'Rules auto-update is off' -Vi 'Đã tắt tự cập nhật bộ quy tắc'; return }
     try {
         $rs = [runspacefactory]::CreateRunspace(); $rs.Open()
         $rs.SessionStateProxy.SetVariable('WdlRootPath', $script:WdlRoot)
         $ps = [powershell]::Create(); $ps.Runspace = $rs
         $txt = [IO.File]::ReadAllText((Join-Path $script:WdlRoot 'lib\Common.ps1')) + "`r`n" + [IO.File]::ReadAllText((Join-Path $script:WdlRoot 'lib\Rules.ps1'))
         [void]$ps.AddScript($txt + "`r`n" + '$script:WdlRoot = $WdlRootPath' + "`r`n" + 'Update-WdlRules')
-        $script:RulesJob = @{ PS = $ps; RS = $rs; Handle = $ps.BeginInvoke(); Clock = [Diagnostics.Stopwatch]::StartNew() }
+        $script:RulesJob = @{ PS = $ps; RS = $rs; Handle = $ps.BeginInvoke(); Clock = [Diagnostics.Stopwatch]::StartNew(); Manual = [bool]$Manual }
+        if ($Manual -and $script:ui) { $script:ui.btnRulesCheck.Enabled = $false; $script:ui.lblStatus.Text = T 'status.rulesChecking' }
     } catch { Write-WdlLog -En "Rules check not started: $($_.Exception.Message)" -Vi 'Không chạy được kiểm tra bộ quy tắc' }
 }
 
@@ -194,6 +193,10 @@ function Invoke-WdlRulesTick {
     }
     Write-WdlRulesResult $r
     if ([string]$r.Status -eq 'Updated') { $script:RulesReload = $true }
+    if ($j.Manual -and $script:ui) {
+        $script:ui.btnRulesCheck.Enabled = $true
+        $script:ui.lblStatus.Text = T (Get-WdlRulesResultKey $r) ([string]$r.Version)
+    }
 }
 
 function Set-WdlBusy {
@@ -523,7 +526,7 @@ function Show-WdlGui {
     Add-Type -AssemblyName System.Drawing
     [Windows.Forms.Application]::EnableVisualStyles()
     try { [Windows.Forms.Application]::SetUnhandledExceptionMode([Windows.Forms.UnhandledExceptionMode]::CatchException) } catch { $null = $_ }
-    $script:Sync = [hashtable]::Synchronized(@{ LogQueue = [Collections.Queue]::Synchronized((New-Object Collections.Queue)); Percent = 0; Status = ''; Cancel = $false; Cancelled = $false; Result = $null; Error = $null; UiLang = 'en' })
+    $script:Sync = [hashtable]::Synchronized(@{ LogQueue = [Collections.Queue]::Synchronized((New-Object Collections.Queue)); Percent = 0; Status = ''; Cancel = $false; Cancelled = $false; Result = $null; Error = $null; UiLang = 'vi' })
     $script:WDL.Sync = $script:Sync
     $script:Job = $null; $script:RulesJob = $null; $script:RulesReload = $false; $script:Session = $null; $script:AppItems = @(); $script:TweakItems = @()
     $script:Settings = Read-WdlSettings
@@ -539,7 +542,7 @@ function Show-WdlGui {
     $ui = @{ form = $f; tip = (New-Object Windows.Forms.ToolTip) }
     foreach ($n in @('lblSys', 'lblAppsTitle', 'lblNotOffered', 'lblStatus', 'lblRules', 'statApps', 'statTweaks', 'segMode', 'cbLang', 'cbPreset',
             'btnGo', 'btnSimplePreview', 'btnAppDef', 'btnAppAll', 'btnAppNone', 'btnPresetApply', 'btnPreview', 'btnApply', 'btnUndo', 'btnRescan', 'btnCancel',
-            'btnLogs', 'btnBackups', 'clbApps', 'clbTweaks', 'rbAll', 'rbCur', 'chkRestore', 'chkProtect', 'chkDefaultUser', 'chkRules', 'pb', 'tbLog')) { $ui[$n] = $f.$n }
+            'btnLogs', 'btnBackups', 'btnRulesCheck', 'clbApps', 'clbTweaks', 'rbAll', 'rbCur', 'chkRestore', 'chkProtect', 'chkDefaultUser', 'chkRules', 'pb', 'tbLog')) { $ui[$n] = $f.$n }
     $script:ui = $ui
     $ui.cbLang.SetItems([string[]]@($script:WdlLangs | ForEach-Object { $_.Name }))
     for ($i = 0; $i -lt $script:WdlLangs.Count; $i++) { if ($script:WdlLangs[$i].Code -eq $script:UiLang) { $ui.cbLang.SelectedIndex = $i } }
@@ -556,6 +559,7 @@ function Show-WdlGui {
     $script:H.Rescan = { Start-WdlScan }
     $script:H.Cancel = { $script:Sync.Cancel = $true; Write-WdlLog -Level WARN -En 'Cancelling after the current item...' -Vi 'Đang huỷ sau mục hiện tại...' }
     $script:H.Mode = { $m = 'Advanced'; if ($script:ui.segMode.SelectedIndex -eq 0) { $m = 'Simple' }; if ($m -ne $script:ModeNow) { Set-WdlMode $m } }
+    $script:H.RulesCheck = { Start-WdlRulesUpdate -Manual }
     $script:H.Logs = { Start-Process -FilePath 'explorer.exe' -ArgumentList ('"{0}"' -f (Join-Path (Get-WdlDataDir) 'logs')) }
     $script:H.Backups = { Start-Process -FilePath 'explorer.exe' -ArgumentList ('"{0}"' -f (Get-WdlBackupDir)) }
     $script:H.AppDef = { Set-WdlChecks -Preset recommended -AppsOnly }
@@ -586,6 +590,7 @@ function Show-WdlGui {
     $ui.btnCancel.Add_Click({ Invoke-WdlHandler 'Cancel' })
     $ui.segMode.Add_SelectedIndexChanged({ Invoke-WdlHandler 'Mode' })
     $ui.btnLogs.Add_Click({ Invoke-WdlHandler 'Logs' })
+    $ui.btnRulesCheck.Add_Click({ Invoke-WdlHandler 'RulesCheck' })
     $ui.btnBackups.Add_Click({ Invoke-WdlHandler 'Backups' })
     $ui.btnAppDef.Add_Click({ Invoke-WdlHandler 'AppDef' })
     $ui.btnAppAll.Add_Click({ Invoke-WdlHandler 'AppAll' })

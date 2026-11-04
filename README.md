@@ -25,7 +25,7 @@ WinDebloat Live removes preinstalled apps and turns off ads, suggestions, Copilo
 directly on a running Windows 10 or Windows 11 PC. It is the companion of WinDebloat Tool, which applies the
 same rules to installation images, and uses the same app and tweak lists. **Simple** mode cleans the PC with
 one click using safe defaults; **Advanced** mode allows every app and setting to be chosen, with a preview of
-the exact changes. The interface follows the Windows light or dark theme, scales on high-DPI screens and is available in English and Vietnamese, with partial Chinese and Khmer.
+the exact changes. The interface follows the Windows light or dark theme, scales on high-DPI screens and is available in Vietnamese (default) and English, with partial Chinese and Khmer.
 
 ## Highlights
 - Removal of preinstalled apps for all users (including new accounts) or only the signed-in user.
