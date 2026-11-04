@@ -445,7 +445,7 @@ namespace WdlUi
         }
         protected override void OnMouseEnter(EventArgs e) { base.OnMouseEnter(e); Hover(true); }
         protected override void OnMouseLeave(EventArgs e) { base.OnMouseLeave(e); if (!ClientRectangle.Contains(PointToClient(Cursor.Position))) Hover(false); }
-        protected override void Dispose(bool disposing) { if (disposing) anim.Dispose(); base.Dispose(disposing); }
+        protected override void Dispose(bool disposing) { if (disposing) { anim.Stop(); anim.Dispose(); } base.Dispose(disposing); }
     }
 
     // ------------------------------------------------------------------ buttons
@@ -555,7 +555,7 @@ namespace WdlUi
             Rectangle tr = new Rectangle((int)(x + iconPx + gap), 0, ts.Width + 4, Height);
             TextRenderer.DrawText(g, Text, Font, tr, fg, TextFormatFlags.NoPadding | TextFormatFlags.SingleLine | TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
         }
-        protected override void Dispose(bool disposing) { if (disposing) anim.Dispose(); base.Dispose(disposing); }
+        protected override void Dispose(bool disposing) { if (disposing) { anim.Stop(); anim.Dispose(); } base.Dispose(disposing); }
     }
 
     // ------------------------------------------------------------------ switch / checkbox / radio
@@ -675,7 +675,7 @@ namespace WdlUi
             if (Focused && ShowFocusCues)
                 using (Pen pen = new Pen(Theme.Primary, Theme.SF(1))) { pen.DashStyle = DashStyle.Dot; g.DrawRectangle(pen, tr.X - 2, 2, Math.Min(tr.Width - 1, TextRenderer.MeasureText(Text, Font).Width) + 2, Height - 5); }
         }
-        protected override void Dispose(bool disposing) { if (disposing) anim.Dispose(); base.Dispose(disposing); }
+        protected override void Dispose(bool disposing) { if (disposing) { anim.Stop(); anim.Dispose(); } base.Dispose(disposing); }
     }
 
     // ------------------------------------------------------------------ segmented button
@@ -858,7 +858,7 @@ namespace WdlUi
             using (GraphicsPath p = Theme.Round(t, t.Width / 2f)) using (SolidBrush b = new SolidBrush(Theme.Alpha(Theme.OnSurfaceVariant, 0.35f + 0.3f * barHover))) g.FillPath(b, p);
         }
         protected override void OnPaintBackground(PaintEventArgs e) { using (SolidBrush b = new SolidBrush(Theme.BackOf(this))) e.Graphics.FillRectangle(b, ClientRectangle); }
-        protected override void Dispose(bool disposing) { if (disposing) anim.Dispose(); base.Dispose(disposing); }
+        protected override void Dispose(bool disposing) { if (disposing) { anim.Stop(); anim.Dispose(); } base.Dispose(disposing); }
     }
 
     // ------------------------------------------------------------------ list with check boxes / single selection
@@ -1099,9 +1099,9 @@ namespace WdlUi
             get { return selected; }
             set { int v = Math.Max(-1, Math.Min(Items.Count - 1, value)); if (v != selected) { selected = v; Invalidate(); if (SelectedIndexChanged != null) SelectedIndexChanged(this, EventArgs.Empty); } }
         }
-        public void SetItems(string[] list) { Items.Clear(); Items.AddRange(list); selected = Items.Count > 0 ? 0 : -1; Invalidate(); }
+        public void SetItems(string[] list) { CloseMenu(); Items.Clear(); Items.AddRange(list); selected = Items.Count > 0 ? 0 : -1; Invalidate(); }
         // replaces item texts (language switch) without raising SelectedIndexChanged
-        public void SetTexts(string[] list) { int s = selected; Items.Clear(); Items.AddRange(list); selected = Math.Min(s, Items.Count - 1); Invalidate(); }
+        public void SetTexts(string[] list) { CloseMenu(); int s = selected; Items.Clear(); Items.AddRange(list); selected = Math.Min(s, Items.Count - 1); Invalidate(); }
         public void ApplyTheme() { Font = Theme.Font(TextStyle.Body); Height = Theme.S(40); Invalidate(); }
         protected override void OnMouseEnter(EventArgs e) { base.OnMouseEnter(e); hoverTarget = 1; anim.Start(); }
         protected override void OnMouseLeave(EventArgs e) { base.OnMouseLeave(e); hoverTarget = 0; anim.Start(); }
@@ -1117,25 +1117,45 @@ namespace WdlUi
             if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter || (e.Alt && e.KeyCode == Keys.Down)) ShowMenu();
         }
         protected override void OnClick(EventArgs e) { base.OnClick(e); ShowMenu(); }
+        // one menu per dropdown for its whole life: a menu disposed while the modal menu filter still tracks it
+        // throws ObjectDisposedException on the next mouse press
+        ContextMenuStrip menu;
+        int pending = -1;
+        public void OpenMenu() { ShowMenu(); }
+        public bool MenuOpen { get { return menu != null && menu.Visible; } }
+        public void CloseMenu() { if (menu != null && !menu.IsDisposed && menu.Visible) menu.Close(ToolStripDropDownCloseReason.CloseCalled); }
         void ShowMenu()
         {
-            if (!Enabled || Items.Count == 0) return;
-            ContextMenuStrip m = new ContextMenuStrip();
-            m.Renderer = new MenuRenderer(); m.Font = Font; m.ShowImageMargin = false; m.BackColor = Theme.CardHigh; m.Padding = new Padding(0, Theme.S(6), 0, Theme.S(6));
+            if (!Enabled || Items.Count == 0 || IsDisposed) return;
+            if (MenuOpen) { CloseMenu(); return; }
+            if (menu == null)
+            {
+                menu = new ContextMenuStrip();
+                menu.Renderer = new MenuRenderer(); menu.ShowImageMargin = false;
+                menu.Closed += delegate { open = false; Invalidate(); if (pending >= 0 && IsHandleCreated && !IsDisposed) BeginInvoke(new MethodInvoker(ApplyPending)); };
+            }
+            menu.Font = Font; menu.BackColor = Theme.CardHigh; menu.Padding = new Padding(0, Theme.S(6), 0, Theme.S(6));
+            List<ToolStripItem> old = new List<ToolStripItem>();
+            foreach (ToolStripItem x in menu.Items) old.Add(x);
+            menu.Items.Clear();
+            foreach (ToolStripItem x in old) x.Dispose();
             for (int i = 0; i < Items.Count; i++)
             {
                 int idx = i;
                 ToolStripMenuItem it = new ToolStripMenuItem(Items[i]);
                 it.ForeColor = Theme.OnSurface; it.Padding = new Padding(Theme.S(8), Theme.S(8), Theme.S(8), Theme.S(8));
                 it.Font = i == selected ? Theme.Font(TextStyle.BodyStrong) : Font;
-                it.Click += delegate { SelectedIndex = idx; };
-                m.Items.Add(it);
+                it.Click += delegate { pending = idx; if (!MenuOpen && IsHandleCreated) BeginInvoke(new MethodInvoker(ApplyPending)); };
+                menu.Items.Add(it);
             }
-            m.MinimumSize = new Size(Width, 0);
-            m.Closed += delegate { open = false; Invalidate(); m.Dispose(); };
-            open = true; Invalidate();
-            m.Show(this, new Point(0, Height + Theme.S(4)));
+            menu.MinimumSize = new Size(Width, 0);
+            pending = -1; open = true; Invalidate();
+            menu.Show(this, new Point(0, Height + Theme.S(4)));
         }
+        // the selection runs after the menu is fully closed, so a handler may rebuild the window safely
+        void ApplyPending() { int p = pending; pending = -1; if (p >= 0 && !IsDisposed) SelectedIndex = p; }
+        protected override void OnVisibleChanged(EventArgs e) { base.OnVisibleChanged(e); if (!Visible) CloseMenu(); }
+        protected override void OnParentChanged(EventArgs e) { base.OnParentChanged(e); CloseMenu(); }
         protected override void OnPaintBackground(PaintEventArgs e) { using (SolidBrush b = new SolidBrush(Theme.BackOf(Parent))) e.Graphics.FillRectangle(b, ClientRectangle); }
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -1156,7 +1176,15 @@ namespace WdlUi
                 if (open) g.DrawLines(pen, new PointF[] { new PointF(cx - s, cy + s / 2), new PointF(cx, cy - s / 2), new PointF(cx + s, cy + s / 2) });
                 else g.DrawLines(pen, new PointF[] { new PointF(cx - s, cy - s / 2), new PointF(cx, cy + s / 2), new PointF(cx + s, cy - s / 2) }); }
         }
-        protected override void Dispose(bool disposing) { if (disposing) anim.Dispose(); base.Dispose(disposing); }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                anim.Stop(); anim.Dispose();
+                if (menu != null) { CloseMenu(); menu.Dispose(); menu = null; }
+            }
+            base.Dispose(disposing);
+        }
     }
 
     public class MenuRenderer : ToolStripProfessionalRenderer
@@ -1252,6 +1280,13 @@ namespace WdlUi
             }
         }
         protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); Theme.StyleWindow(this); }
+        public static void CloseMenus(Control c)
+        {
+            WdlDropdown d = c as WdlDropdown;
+            if (d != null) d.CloseMenu();
+            foreach (Control x in c.Controls) CloseMenus(x);
+        }
+        protected override void OnFormClosing(FormClosingEventArgs e) { CloseMenus(this); base.OnFormClosing(e); }
         public void ApplyTheme() { Theme.Apply(this); }
         // initial size in dp, kept inside the working area of the screen
         public void FitToScreen(int wDp, int hDp, int minWDp, int minHDp)

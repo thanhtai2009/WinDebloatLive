@@ -526,6 +526,13 @@ function Show-WdlGui {
     Add-Type -AssemblyName System.Drawing
     [Windows.Forms.Application]::EnableVisualStyles()
     try { [Windows.Forms.Application]::SetUnhandledExceptionMode([Windows.Forms.UnhandledExceptionMode]::CatchException) } catch { $null = $_ }
+    # any UI-thread exception goes to the log and our own error dialog instead of the raw .NET one
+    $script:OnThreadEx = [Threading.ThreadExceptionEventHandler] {
+        param($s, $e)
+        $rec = New-Object Management.Automation.ErrorRecord $e.Exception, 'ui', ([Management.Automation.ErrorCategory]::NotSpecified), $null
+        Show-WdlError -Context 'ui' -ErrorRecord $rec
+    }
+    [Windows.Forms.Application]::add_ThreadException($script:OnThreadEx)
     $script:Sync = [hashtable]::Synchronized(@{ LogQueue = [Collections.Queue]::Synchronized((New-Object Collections.Queue)); Percent = 0; Status = ''; Cancel = $false; Cancelled = $false; Result = $null; Error = $null; UiLang = 'vi' })
     $script:WDL.Sync = $script:Sync
     $script:Job = $null; $script:RulesJob = $null; $script:RulesReload = $false; $script:Session = $null; $script:AppItems = @(); $script:TweakItems = @()
@@ -617,7 +624,21 @@ function Show-WdlGui {
     Set-WdlUiTexts
     Update-WdlCommandStates
     $timer.Start()
-    try { [void]$f.ShowDialog() } finally { $timer.Stop(); $f.Dispose() }
+    $script:GuiClosed = $false
+    $f.Add_FormClosed({ $script:GuiClosed = $true })
+    try { [void]$f.ShowDialog() }
+    catch {
+        # only a disposed-object error raised after the window has closed is ignored
+        $ex = $_.Exception; while ($ex.InnerException) { $ex = $ex.InnerException }
+        if (-not ($script:GuiClosed -and $ex -is [ObjectDisposedException])) { throw }
+        Write-WdlLog -Level WARN -En "Ignored after close: $($ex.Message)" -Vi 'Bỏ qua lỗi sau khi đóng cửa sổ'
+    } finally {
+        $timer.Stop()
+        $j = $script:RulesJob; $script:RulesJob = $null
+        if ($j) { try { [void]$j.PS.BeginStop($null, $null); $j.RS.Dispose() } catch { $null = $_ } }
+        $f.Dispose()
+        try { [Windows.Forms.Application]::remove_ThreadException($script:OnThreadEx) } catch { $null = $_ }
+    }
 }
 
 function Set-WdlChecks {

@@ -75,16 +75,32 @@ static class Shots
         foreach (Control x in c.Controls) n += Bad(x);
         return n;
     }
+    static int disposedOpen;
+    static ContextMenuStrip MenuOf(WdlDropdown d)
+    {
+        ContextMenuStrip m = (ContextMenuStrip)typeof(WdlDropdown).GetField("menu", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(d);
+        if (m != null && m.Tag == null) { m.Tag = "watched"; m.Disposed += delegate { if (m.Visible) disposedOpen++; }; }
+        return m;
+    }
+    static void Pump() { for (int k = 0; k < 3; k++) Application.DoEvents(); }
     static int Stress()
     {
         MainForm f = new MainForm(); f.ApplyTheme(); f.Show();
         ModeDialog d = new ModeDialog(); d.ApplyTheme(); d.Show();
+        int picks = 0;
+        EventHandler rebuild = delegate { picks++; f.cbPreset.SetTexts(new string[] { "x", "y" }); f.SetMode(picks % 2 == 0); f.ApplyTheme(); };
+        f.cbLang.SelectedIndexChanged += rebuild; f.cbPreset.SelectedIndexChanged += rebuild;
         string[] fams = { null, "DejaVu Sans", "Noto Sans", null };
         int bad = 0;
         for (int i = 0; i < 40; i++)
         {
             Theme.Init(i % 2 == 1, Theme.IconDir);
             Theme.SetFamily(fams[i % fams.Length]);
+            WdlDropdown dd = i % 2 == 0 ? f.cbLang : f.cbPreset;
+            dd.OpenMenu(); Pump();
+            ContextMenuStrip m = MenuOf(dd);
+            if (i % 4 < 2 && m != null && m.Items.Count > 1) { m.Items[1].PerformClick(); Pump(); }
+            if (i % 4 == 2) f.cbPreset.SetItems(new string[] { "a", "b", "c" });
             f.SetMode(i % 3 == 0);
             f.ApplyTheme(); d.ApplyTheme();
             d.cardSimple.Hover(i % 2 == 0);
@@ -92,7 +108,11 @@ static class Shots
             for (int k = 0; k < 3; k++) Application.DoEvents();
             bad += Bad(f) + Bad(d);
         }
-        Console.WriteLine(bad == 0 ? "stress: OK (40 rounds)" : "stress: " + bad + " control(s) hold a disposed font");
+        f.cbLang.OpenMenu(); Pump(); MenuOf(f.cbLang);
+        d.Close(); f.Close(); f.Dispose(); d.Dispose(); Pump();
+        if (picks == 0) { Console.WriteLine("stress: no dropdown selection was applied"); bad++; }
+        if (disposedOpen > 0) { Console.WriteLine("stress: " + disposedOpen + " dropdown menu(s) disposed while visible"); bad += disposedOpen; }
+        Console.WriteLine(bad == 0 ? "stress: OK (40 rounds, " + picks + " dropdown picks)" : "stress: " + bad + " control(s) hold a disposed font");
         return bad == 0 ? 0 : 1;
     }
 
