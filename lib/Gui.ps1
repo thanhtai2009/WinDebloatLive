@@ -209,7 +209,8 @@ function Set-WdlBusy {
 function Invoke-WdlTick {
     try {
         Invoke-WdlRulesTick
-        if ($script:RulesReload -and -not $script:Job) { $script:RulesReload = $false; Start-WdlScan }
+        # the timer keeps ticking while a callback shows a modal dialog: never start a rescan from there
+        if ($script:RulesReload -and -not $script:Job -and -not $script:InCallback) { $script:RulesReload = $false; Start-WdlScan }
         $q = $script:Sync.LogQueue
         $sb = New-Object Text.StringBuilder
         while ($q.Count -gt 0) { [void]$sb.Append([string]$q.Dequeue()); [void]$sb.Append("`r`n") }
@@ -229,7 +230,10 @@ function Invoke-WdlTick {
         if ($script:Sync.Cancelled) { $script:ui.lblStatus.Text = T 'status.cancelled'; return }
         if ($script:Sync.Error) { Show-WdlError -Context $j.Name -Message ([string]$script:Sync.Error); return }
         $script:ui.lblStatus.Text = T 'status.done'
-        if ($j.OnDone) { try { & $j.OnDone } catch { Show-WdlError -Context $j.Name -ErrorRecord $_ } }
+        if ($j.OnDone) {
+            $script:InCallback = $true
+            try { & $j.OnDone } catch { Show-WdlError -Context $j.Name -ErrorRecord $_ } finally { $script:InCallback = $false }
+        }
     } catch {
         if (-not $script:TickFailed) { $script:TickFailed = $true; Show-WdlError -Context 'UI timer' -ErrorRecord $_ }
     }
@@ -462,6 +466,7 @@ $plan = Get-WdlResolvedPlan -Session $JobArgs.Session -AppIds $JobArgs.AppIds -T
 $sync.Result = @{ Plan = $plan; Text = (Format-WdlPreview -Plan $plan -Lang $sync.UiLang); Model = (Get-WdlPreviewModel -Plan $plan -Lang $sync.UiLang); Counts = (Get-WdlPlanCounts $plan) }
 '@ -OnDone {
         $r = $script:Sync.Result
+        if ($script:Sync.Cancel) { $script:ui.lblStatus.Text = T 'status.cancelled'; return }
         $btn = $null
         if ($script:PendingApply -and $r.Counts.Total -gt 0) { $btn = T 'dlg.applyBtn' }
         $go = Show-WdlTextDialog -Title (T 'dlg.previewTitle') -Text $r.Text -ApplyText $btn -Model @($r.Model)
@@ -476,6 +481,8 @@ function Start-WdlRestorePoint {
     if (-not $script:PendingOptions.RestorePoint) { Start-WdlApplyJob -RestorePoint $null; return }
     $null = Start-WdlJob -Name 'restore point' -Status (T 'status.restorePoint') -JobArgs @{ Enable = [bool]$script:PendingOptions.EnableProtection } -Script '$sync.Result = Invoke-WdlRestorePointStep -EnableProtection $JobArgs.Enable' -OnDone {
         $rp = $script:Sync.Result
+        # the restore point call cannot be interrupted; a Cancel pressed meanwhile stops before any change
+        if ($script:Sync.Cancel) { $script:ui.lblStatus.Text = T 'status.cancelled'; return }
         if ($rp.Ok) { Start-WdlApplyJob -RestorePoint $rp; return }
         $drive = $env:SystemDrive; if (-not $drive) { $drive = 'C:' }
         if ($rp.NeedsConsent) { $q = T 'msg.rpConsent' $drive } else { $q = T 'msg.rpFailed' (Get-WdlLocalText ([string]$rp.Error) $script:UiLang) }
@@ -490,11 +497,19 @@ function Start-WdlApplyJob {
     $null = Start-WdlJob -Name 'apply' -Status (T 'status.applying') -JobArgs $a -Script '$sync.Result = Invoke-WdlApply -Session $JobArgs.Session -Plan $JobArgs.Plan -RestorePoint $JobArgs.RestorePoint' -OnDone {
         $r = $script:Sync.Result
         $icon = 'Information'; if ($r.Failed) { $icon = 'Warning' }
-        Show-WdlMsg (T 'msg.applied' $r.Done $r.Failed $r.Unchanged $r.BackupPath) $icon | Out-Null
+        if ($r.Cancelled) { $script:ui.lblStatus.Text = T 'status.cancelled'; Show-WdlMsg (T 'msg.appliedCancelled' $r.Done $r.Failed $r.BackupPath) 'Warning' | Out-Null }
+        else { Show-WdlMsg (T 'msg.applied' $r.Done $r.Failed $r.Unchanged $r.BackupPath) $icon | Out-Null }
         $reboot = [bool]$r.Reboot
         Start-WdlScan
         if ($reboot -and (Show-WdlMsg (T 'msg.reboot') 'Question' 'YesNo') -eq 'Yes') { Restart-WdlComputer }
     }
+}
+
+function Format-WdlBackupDate([string]$Text) {
+    # backups store ISO 8601 with offset; show local 'yyyy-MM-dd HH:mm:ss', or the raw text if it does not parse
+    $d = [DateTimeOffset]::MinValue
+    if ([DateTimeOffset]::TryParse($Text, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref]$d)) { return $d.LocalDateTime.ToString('yyyy-MM-dd HH:mm:ss', [Globalization.CultureInfo]::InvariantCulture) }
+    return $Text
 }
 
 function Show-WdlUndoDialog {
@@ -508,7 +523,7 @@ function Show-WdlUndoDialog {
         $items = New-Object 'Collections.Generic.List[WdlUi.WdlItem]'
         foreach ($b in $list) {
             $it = New-Object WdlUi.WdlItem
-            $it.Title = [string]$b.Created; $it.Subtitle = '{0}: {1}' -f (T 'col.changes'), $b.Changes; $it.Tag = [string]$b.Path
+            $it.Title = Format-WdlBackupDate ([string]$b.Created); $it.Subtitle = '{0}: {1}' -f (T 'col.changes'), $b.Changes; $it.Tag = [string]$b.Path
             if ($b.Restored) { $it.Badge = T 'state.restored' } else { $it.Badge = T 'state.active'; $it.Warn = $true }
             $items.Add($it)
         }
@@ -522,8 +537,15 @@ function Show-WdlUndoDialog {
     $null = Start-WdlJob -Name 'undo' -Status (T 'status.undoing') -JobArgs @{ Path = [string]$sel.Tag } -Script '$sync.Result = Invoke-WdlUndo -Path $JobArgs.Path' -OnDone {
         $r = $script:Sync.Result
         $icon = 'Information'; if ($r.Failed) { $icon = 'Warning' }
-        Show-WdlMsg (T 'msg.undone' $r.Restored $r.Failed) $icon | Out-Null
-        if (@($r.Manual).Count) { Show-WdlMsg (T 'msg.undoManual' ((@($r.Manual) | Select-Object -Unique) -join "`n")) 'Warning' | Out-Null }
+        if ($r.Cancelled) { $script:ui.lblStatus.Text = T 'status.cancelled'; Show-WdlMsg (T 'msg.undoCancelled' $r.Restored $r.Failed) 'Warning' | Out-Null }
+        else { Show-WdlMsg (T 'msg.undone' $r.Restored $r.Failed) $icon | Out-Null }
+        $man = @(@($r.Manual) | Select-Object -Unique)
+        if ($man.Count) {
+            # keep the dialog on screen: the full list is in the log
+            $txt = ($man | Select-Object -First 12) -join "`n"
+            if ($man.Count -gt 12) { $txt += "`n" + (T 'msg.more' ($man.Count - 12)) }
+            Show-WdlMsg (T 'msg.undoManual' $txt) 'Warning' | Out-Null
+        }
         Start-WdlScan
         if ($r.Restored -gt 0 -and (Show-WdlMsg (T 'msg.reboot') 'Question' 'YesNo') -eq 'Yes') { Restart-WdlComputer }
     }
@@ -596,7 +618,7 @@ function Show-WdlGui {
         param($e)
         if (-not $e.NewValue) { return }
         $r = $script:AppItems[$e.Index]
-        if ($r.OptIn -and (Show-WdlMsg (T 'msg.optIn' (Get-WdlLangText $r.Names 'en')) 'Warning' 'YesNo') -ne 'Yes') { $e.Cancel = $true }
+        if ($r.OptIn -and (Show-WdlMsg (T 'msg.optIn' (Get-WdlLangText $r.Names $script:UiLang)) 'Warning' 'YesNo') -ne 'Yes') { $e.Cancel = $true }
     }
     $ui.btnGo.Add_Click({ Invoke-WdlHandler 'Go' })
     $ui.btnApply.Add_Click({ Invoke-WdlHandler 'Apply' })

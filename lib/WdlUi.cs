@@ -1478,16 +1478,21 @@ namespace WdlUi
     // ------------------------------------------------------------------ base window
     public class WdlForm : Form
     {
+        // one shared icon: a Form does not dispose the Icon it is given, so a new one per dialog leaks handles
+        static Icon appIcon;
+        static bool iconLoaded;
         public WdlForm()
         {
             AutoScaleMode = AutoScaleMode.None;   // sizes are scaled by Theme.S, fonts by the system DPI
             DoubleBuffered = true;
             StartPosition = FormStartPosition.CenterScreen;
-            if (Theme.IconDir != null)
+            if (!iconLoaded && Theme.IconDir != null)
             {
+                iconLoaded = true;
                 string ico = Path.Combine(Path.GetDirectoryName(Theme.IconDir), "WinDebloatLive.ico");
-                try { if (File.Exists(ico)) Icon = new Icon(ico); } catch (Exception) { }
+                try { if (File.Exists(ico)) appIcon = new Icon(ico); } catch (Exception) { }
             }
+            if (appIcon != null) Icon = appIcon;
         }
         protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); Theme.StyleWindow(this); }
         public static void CloseMenus(Control c)
