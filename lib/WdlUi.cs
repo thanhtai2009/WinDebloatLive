@@ -395,18 +395,34 @@ namespace WdlUi
             anim.Tick += delegate {
                 hover += (hoverTarget - hover) * 0.3f;
                 if (Math.Abs(hover - hoverTarget) < 0.02f) { hover = hoverTarget; anim.Stop(); }
-                Invalidate();
+                SyncBack();
             };
         }
-        public void ApplyTheme() { BackColor = Theme.Fill(Fill); if (Clickable) Cursor = Cursors.Hand; Invalidate(); }
+        public void ApplyTheme() { if (Clickable) Cursor = Cursors.Hand; SyncBack(); }
+        public Color CurrentFill
+        {
+            get { Color f = Theme.Fill(Fill); return Clickable && hover > 0 ? Theme.Mix(f, Theme.Primary, 0.10f * hover) : f; }
+        }
+        // children inherit the live card color, so hover never leaves patches behind labels or panels
+        void SyncBack()
+        {
+            BackColor = CurrentFill;
+            foreach (Control x in Controls) SyncChild(x, BackColor);
+            Invalidate(true);
+        }
+        static void SyncChild(Control c, Color col)
+        {
+            if (c is WdlCard) return;
+            if (c.BackColor.A == 255 && (c is Panel || c is PictureBox)) c.BackColor = col;
+            foreach (Control x in c.Controls) SyncChild(x, col);
+        }
         protected override void OnPaintBackground(PaintEventArgs e)
         {
             Color outer = Theme.BackOf(Parent);
             using (SolidBrush b = new SolidBrush(outer)) e.Graphics.FillRectangle(b, ClientRectangle);
             Theme.Smooth(e.Graphics);
             RectangleF r = new RectangleF(0.5f, 0.5f, Width - 1.5f, Height - 1.5f);
-            Color fill = Theme.Fill(Fill);
-            if (Clickable && hover > 0) fill = Theme.Mix(fill, Theme.Primary, 0.10f * hover);
+            Color fill = CurrentFill;
             using (GraphicsPath p = Theme.Round(r, Theme.SF(Radius)))
             {
                 using (SolidBrush b = new SolidBrush(fill)) e.Graphics.FillPath(b, p);
@@ -1461,34 +1477,64 @@ namespace WdlUi
         public WdlCard cardSimple, cardAdvanced;
         public WdlToggle chkRemember;
         public string Chosen = "";
+        FlowLayoutPanel root;
+        WdlLabel head;
+        readonly List<WdlLabel> titles = new List<WdlLabel>(), descs = new List<WdlLabel>();
+        bool sizing;
+        const int CardW = 340;
         public ModeDialog()
         {
             FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; MinimizeBox = false;
-            AutoSize = true; AutoSizeMode = AutoSizeMode.GrowAndShrink; Padding = L.M(32, 26, 32, 22);
             Text = "WinDebloat Live";
-            FlowLayoutPanel f = L.Flow(true, false);
-            WdlLabel h = new WdlLabel("@mode.title", TextStyle.Headline, ColorRole.OnSurface); h.Margin = L.M(4, 0, 0, 20);
+            root = L.Flow(true, false);
+            head = new WdlLabel("@mode.title", TextStyle.Headline, ColorRole.OnSurface); head.Margin = L.M(0, 0, 0, 20);
             FlowLayoutPanel row = L.Flow(false, false);
             cardSimple = Choice("@mode.simple", "@mode.simpleDesc", "rocket", Surface.PrimaryContainer, ColorRole.OnPrimaryContainer, "Simple");
             cardAdvanced = Choice("@mode.advanced", "@mode.advancedDesc", "sliders", Surface.SecondaryContainer, ColorRole.OnSecondaryContainer, "Advanced");
-            cardAdvanced.Margin = L.M(16, 0, 0, 0);
+            cardSimple.Margin = Padding.Empty; cardAdvanced.Margin = L.M(16, 0, 0, 0);
             row.Controls.Add(cardSimple); row.Controls.Add(cardAdvanced);
             chkRemember = new WdlToggle("@mode.remember", ToggleKind.Check); chkRemember.Margin = L.M(0, 18, 0, 0);
-            f.Controls.Add(h); f.Controls.Add(row); f.Controls.Add(chkRemember);
-            Controls.Add(f);
+            root.Controls.Add(head); root.Controls.Add(row); root.Controls.Add(chkRemember);
+            Controls.Add(root);
         }
         WdlCard Choice(string title, string desc, string icon, Surface s, ColorRole r, string mode)
         {
             WdlCard c = new WdlCard(); c.Fill = s; c.Radius = 28; c.Clickable = true; c.Padding = L.M(24, 22, 24, 24);
-            c.MinimumSize = new Size(Theme.S(330), Theme.S(210)); c.AutoSize = true; c.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            FlowLayoutPanel f = L.Flow(true, false);
-            WdlLabel t = new WdlLabel(title, TextStyle.Title, r); t.IconName = icon;
-            WdlLabel d = new WdlLabel(desc, TextStyle.Body, r); d.MaximumSize = new Size(Theme.S(282), 0); d.Margin = L.M(0, 12, 0, 0);
-            f.Controls.Add(t); f.Controls.Add(d);
-            c.Controls.Add(f);
+            WdlLabel t = new WdlLabel(title, TextStyle.Title, r); t.IconName = icon; t.Margin = Padding.Empty; t.Location = new Point(c.Padding.Left, c.Padding.Top);
+            WdlLabel d = new WdlLabel(desc, TextStyle.Body, r); d.Margin = Padding.Empty;
+            c.Controls.Add(t); c.Controls.Add(d);
+            titles.Add(t); descs.Add(d);
             c.Click += delegate { Chosen = mode; DialogResult = DialogResult.OK; Close(); };
             return c;
         }
+        // both cards share one size: full-width text, height of the taller content
+        void Fit()
+        {
+            if (sizing || root == null) return;
+            sizing = true;
+            try
+            {
+                Padding p = cardSimple.Padding;
+                int inner = Theme.S(CardW) - p.Horizontal, h = 0;
+                for (int i = 0; i < titles.Count; i++)
+                {
+                    titles[i].MaximumSize = new Size(inner, 0);
+                    descs[i].MaximumSize = new Size(inner, 0); descs[i].MinimumSize = new Size(inner, 0);
+                    titles[i].Location = new Point(p.Left, p.Top);
+                    descs[i].Location = new Point(p.Left, titles[i].Bottom + Theme.S(12));
+                    h = Math.Max(h, descs[i].Bottom - p.Top);
+                }
+                Size cs = new Size(Theme.S(CardW), Math.Max(Theme.S(150), h + p.Vertical));
+                cardSimple.Size = cs; cardAdvanced.Size = cs;
+                int m = Theme.S(28);
+                root.Location = new Point(m, Theme.S(24));
+                Size pr = root.GetPreferredSize(Size.Empty);
+                ClientSize = new Size(pr.Width + m * 2, pr.Height + Theme.S(24) + Theme.S(22));
+            }
+            finally { sizing = false; }
+        }
+        protected override void OnLayout(LayoutEventArgs e) { base.OnLayout(e); Fit(); }
+        protected override void OnFontChanged(EventArgs e) { base.OnFontChanged(e); Fit(); }
     }
 
     public class TextDialog : WdlForm

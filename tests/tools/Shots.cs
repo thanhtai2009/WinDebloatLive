@@ -70,9 +70,9 @@ static class Shots
         Application.EnableVisualStyles();
         string file = Path.Combine(outDir, string.Format("{0}_{1}_{2}.png", shot, lang, a[4]));
         string data = a[5];
-        if (shot == "mode")
+        if (shot == "mode" || shot == "modehover")
         {
-            ModeDialog d = new ModeDialog(); d.ApplyTheme(); Save(d, file); return 0;
+            ModeDialog d = new ModeDialog(); d.ApplyTheme(); if (shot == "modehover") d.cardSimple.Hover(true); Save(d, file); return 0;
         }
         if (shot == "message")
         {
