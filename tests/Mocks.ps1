@@ -95,7 +95,7 @@ function Use-WdlDefaultHive {
 }
 
 # ---- OS / user ----
-$script:MockUser = @{ Sid = 'S-1-5-21-1000-2000-3000-1001'; Name = 'PC\Nguyễn Văn Ánh'; Source = 'explorer' }
+$script:MockUser = @{ Sid = 'S-1-5-21-1000-2000-3000-1001'; Name = 'PC\Người Dùng Thử'; Source = 'explorer' }
 function Set-MockOs([int]$Build, [string]$Type = 'Client', [string]$Edition = 'Professional') {
     $cv = 'SOFTWARE\Microsoft\Windows NT\CurrentVersion'
     Set-MockValue 'HKLM' $cv 'CurrentBuildNumber' 'String' ([string]$Build)

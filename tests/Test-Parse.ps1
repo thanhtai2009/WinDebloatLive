@@ -89,7 +89,7 @@ Assert ($script:UiLang -eq 'en') 'a saved language is respected'
 Set-WdlLanguage 'en'
 Assert ((T 'msg.error' 'scan' 'boom') -match "scan[\s\S]*boom" -and (T 'msg.error' 'a' 'b') -match "`n") 'T: \n becomes a line break'
 Assert ((Get-WdlFontFor -Code 'km' -Installed @('Segoe UI', 'Leelawadee UI')) -eq 'Leelawadee UI' -and (Get-WdlFontFor -Code 'zh-CN' -Installed @('Segoe UI')) -eq 'Segoe UI') 'font choice for Khmer / Chinese'
-$tmp = Join-Path ([IO.Path]::GetTempPath()) ('wdlgui_Nguyễn ' + [guid]::NewGuid().ToString('N').Substring(0, 6))
+$tmp = Join-Path ([IO.Path]::GetTempPath()) ('wdlgui_Người Dùng ' + [guid]::NewGuid().ToString('N').Substring(0, 6))
 $null = New-Item -ItemType Directory -Path (Join-Path $tmp $script:WDL.DataDirName) -Force
 $oldPd = $env:ProgramData; $env:ProgramData = $tmp
 try {
@@ -138,13 +138,16 @@ if ($sleep) {
 $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $root 'WinDebloatLive.ps1'), [ref]$null, [ref]$null)
 $fn = $ast.FindAll({ param($a) $a -is [Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Get-WdlRelaunchArgs' }, $true) | Select-Object -First 1
 . ([scriptblock]::Create($fn.Extent.Text))
-$line = Get-WdlRelaunchArgs -Script "C:\Users\Nguyễn Văn Ánh\O'Brien tools\WinDebloatLive.ps1" -Bound ([ordered]@{ NoGui = [switch]$true; Yes = [switch]$false; Preset = 'aggressive'; Undo = 'C:\a b\backup.json' })
-$want = @("-NoProfile -ExecutionPolicy Bypass -STA -File `"C:\Users\Nguyễn Văn Ánh\O'Brien tools\WinDebloatLive.ps1`"", ' -NoGui', ' -Preset "aggressive"', ' -Undo "C:\a b\backup.json"')
+$line = Get-WdlRelaunchArgs -Script "C:\Users\Người Dùng Thử\user's tools\WinDebloatLive.ps1" -Bound ([ordered]@{ NoGui = [switch]$true; Yes = [switch]$false; Preset = 'aggressive'; Undo = 'C:\a b\backup.json' })
+$want = @("-NoProfile -ExecutionPolicy Bypass -STA -File `"C:\Users\Người Dùng Thử\user's tools\WinDebloatLive.ps1`"", ' -NoGui', ' -Preset "aggressive"', ' -Undo "C:\a b\backup.json"')
 Assert ($line.StartsWith($want[0]) -and @($want | Where-Object { -not $line.Contains($_) }).Count -eq 0 -and $line -notmatch '-Yes') "relaunch arguments keep Unicode / apostrophe paths and switches ($line)"
 $entry = [IO.File]::ReadAllText((Join-Path $root 'WinDebloatLive.ps1'))
 Assert ($entry -match 'Sysnative' -and $entry -match 'Is64BitProcess' -and $entry -match "PSEdition -eq 'Core'" -and $entry -match 'LanguageMode') 'entry script: WOW64, PowerShell 7 and ConstrainedLanguage handling present'
 $bat = [IO.File]::ReadAllText((Join-Path $root 'run.bat'))
 Assert ($bat -match 'fltmc\.exe' -and $bat -match '__WDL_ELEVATED__' -and $bat -match '\$env:WDL_SELF' -and $bat -match 'Sysnative' -and $bat -match '-STA -File') 'run.bat: fltmc check, elevation marker, path via environment, 64-bit, STA'
+Assert ($bat -match "Start-Process -FilePath \(\`$env:SystemRoot \+ '\\System32\\cmd\.exe'\) -ArgumentList \('/c ' \+ \`$q \+ \`$q \+ \`$env:WDL_SELF \+ \`$q" -and $bat -notmatch '-FilePath \$env:WDL_SELF') 'run.bat: elevates cmd.exe /c ""bat" args" (folder names with brackets or &)'
+$main = [IO.File]::ReadAllText((Join-Path $root 'WinDebloatLive.ps1'))
+Assert ($main -match "Threading\.Mutex\(\`$false, 'Global\\WinDebloatLive'\)" -and $main.IndexOf('Threading.Mutex') -lt $main.IndexOf('Initialize-WdlDataDir')) 'single instance: global mutex taken before any change'
 
 Write-Host ''
 Write-Host ("Parse tests: {0} passed, {1} failed" -f $script:pass, $script:fail)

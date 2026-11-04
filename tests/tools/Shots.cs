@@ -249,7 +249,7 @@ static class Shots
         f.lblNotOffered.Text = T("lbl.notOffered", 2);
         f.statApps.Value = "24"; f.statTweaks.Value = "9";
         f.chkProtect.Text = T("chk.protect", "C:");
-        f.lblSys.Text = T("hdr.system", "Windows 11 Pro", "24H2", "26100.2314", lang == "vi" ? "PC\\Nguyễn Văn Ánh" : "PC\\Alex");
+        f.lblSys.Text = T("hdr.system", "Windows 11 Pro", "24H2", "26100.2314", lang == "vi" ? "PC\\Người Dùng Thử" : "PC\\Test User");
         f.SetMode(shot == "simple");
         f.lblStatus.Text = shot == "simple" ? T("status.ready") : T("status.applying");
         f.pb.Value = shot == "simple" ? 0 : 62;

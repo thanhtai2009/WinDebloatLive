@@ -36,6 +36,12 @@ exit /b
 :elevate
 echo Requesting administrator rights... / Dang xin quyen Administrator...
 set "WDL_SELF=%~f0"
-"%PSEXE%" -NoProfile -ExecutionPolicy Bypass -Command "$a = '__WDL_ELEVATED__'; if ($env:WDL_ARGS) { $a = $a + ' ' + $env:WDL_ARGS }; Start-Process -FilePath $env:WDL_SELF -ArgumentList $a -Verb RunAs"
+rem Elevate cmd.exe with the whole command in an extra pair of quotes, not the .bat itself: the RunAs verb
+rem of .bat files loses the quotes when the folder name has brackets or an ampersand, as in a "(1)" download copy.
+"%PSEXE%" -NoProfile -ExecutionPolicy Bypass -Command "$q = [char]34; $a = '__WDL_ELEVATED__'; if ($env:WDL_ARGS) { $a = $a + ' ' + $env:WDL_ARGS }; Start-Process -FilePath ($env:SystemRoot + '\System32\cmd.exe') -ArgumentList ('/c ' + $q + $q + $env:WDL_SELF + $q + ' ' + $a + $q) -Verb RunAs"
+if errorlevel 1 (
+  echo Administrator rights were not granted. / Chua duoc cap quyen Administrator.
+  pause
+)
 endlocal
 exit /b

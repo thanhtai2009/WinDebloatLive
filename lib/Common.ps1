@@ -36,7 +36,12 @@ function Write-WdlLog {
     if ($Vi) { $text = "$En | $Vi" } else { $text = $En }
     $line = "[$ts] [$Level] $text"
     if ($script:WDL.LogPath) {
-        try { [IO.File]::AppendAllText($script:WDL.LogPath, $line + "`r`n", (New-Object Text.UTF8Encoding $true)) } catch { $null = $_ }
+        # the UI thread and a job runspace may write at the same moment: retry briefly instead of losing the line
+        for ($try = 0; $try -lt 5; $try++) {
+            try { [IO.File]::AppendAllText($script:WDL.LogPath, $line + "`r`n", (New-Object Text.UTF8Encoding $true)); break }
+            catch [IO.IOException] { Start-Sleep -Milliseconds 20 }
+            catch { break }
+        }
     }
     $s = $script:WDL.Sync
     if ($s) {

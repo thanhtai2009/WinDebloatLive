@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+- run.bat: elevation works from folders whose name has brackets or an ampersand, such as "WinDebloatLive (1)".
+- Only one instance runs at a time.
+- Cancel keeps the result: the summary, the backup and the restart prompt still appear; Cancel during the
+  restore point stops before any change.
+- Undo reports values of a signed-out user as failed instead of marking them restored.
+- REG_NONE values can be backed up and restored; two runs in the same second get separate backup files.
+- No automatic rescan while a dialog is open, so Apply after a preview no longer fails with "a task is running".
+- Downloaded rules may not delete service, Winlogon or LSA entries, write more execution locations or UAC
+  values, or disable protected scheduled tasks; more critical services are protected.
+- Vietnamese texts use "bộ quy tắc" throughout; opt-in warning shows the app name in the UI language; undo list
+  shows readable dates; long manual-reinstall lists stay on screen.
+
 ## 1.0.0 — 2026-11-03
 
 ### Added

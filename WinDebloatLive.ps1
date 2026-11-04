@@ -116,13 +116,30 @@ if (-not (Test-WdlAdmin)) {
     catch { Write-Host 'Administrator rights are required. / Cần quyền Administrator.' -ForegroundColor Red; exit 1 }
 }
 
+$guiMode = -not $NoGui -and -not $Preview -and -not $ListBackups -and -not $UpdateRules -and -not $Undo
+function Show-WdlStartError([string]$Text) {
+    if (-not $guiMode) { return }
+    try { Add-Type -AssemblyName System.Windows.Forms; [void][Windows.Forms.MessageBox]::Show($Text, $script:WDL.Name, 'OK', 'Error') } catch { $null = $_ }
+}
 $os = Get-WdlOsInfo
 if (-not $os.Supported) {
     Write-Host "Not supported: $($os.Reason)" -ForegroundColor Red
-    if (-not $NoGui -and -not $Preview -and -not $ListBackups -and -not $UpdateRules -and -not $Undo) {
-        try { Add-Type -AssemblyName System.Windows.Forms; [void][Windows.Forms.MessageBox]::Show("Not supported:`n$($os.Reason)", $script:WDL.Name, 'OK', 'Error') } catch { $null = $_ }
-    }
+    Show-WdlStartError "Not supported:`n$($os.Reason)"
     exit 1
+}
+# one instance at a time: two runs would race on the registry, the Default profile hive and the backups
+if (-not $ListBackups) {
+    $owned = $false
+    try {
+        $script:WdlMutex = New-Object Threading.Mutex($false, 'Global\WinDebloatLive')
+        try { $owned = $script:WdlMutex.WaitOne(0) } catch { $owned = $true }   # abandoned by a crashed run: ours now
+    } catch { $owned = $false }   # exists but not accessible: held by another user's instance
+    if (-not $owned) {
+        $t = "WinDebloat Live is already running. Close the other window first.`nWinDebloat Live đang chạy. Hãy đóng cửa sổ kia trước."
+        Write-Host $t -ForegroundColor Red
+        Show-WdlStartError $t
+        exit 4
+    }
 }
 $null = Initialize-WdlDataDir
 $script:WDL.LogPath = Join-Path (Join-Path (Get-WdlDataDir) 'logs') ('WinDebloatLive_{0}.log' -f (Get-Date -Format 'yyyyMMdd_HHmmss'))
@@ -148,7 +165,7 @@ try {
         exit 1
     }
     if ($Undo) {
-        $path = $Undo
+        $path = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Undo)   # relative to the PowerShell location
         if ($Undo -eq 'latest') {
             $b = @(Get-WdlBackups | Where-Object { -not $_.Restored })
             if (-not $b.Count) { Write-Host 'No backup to undo. / Không có bản sao lưu để hoàn tác.'; exit 1 }
@@ -209,6 +226,6 @@ try {
 } catch {
     Write-WdlLog -Level ERROR -En $_.Exception.Message
     if ($script:WDL.LogPath) { try { [IO.File]::AppendAllText($script:WDL.LogPath, '    ' + $_.Exception.ToString() + "`r`n" + $_.ScriptStackTrace + "`r`n") } catch { $null = $_ } }
-    if (-not $NoGui) { try { Add-Type -AssemblyName System.Windows.Forms; [void][Windows.Forms.MessageBox]::Show($_.Exception.Message + "`n`nLog: " + $script:WDL.LogPath, $script:WDL.Name, 'OK', 'Error') } catch { $null = $_ } }
+    Show-WdlStartError ($_.Exception.Message + "`n`nLog: " + $script:WDL.LogPath)
     exit 1
 }
