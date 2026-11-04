@@ -43,10 +43,41 @@ static class Shots
         return l.ToArray();
     }
 
+    // every button-like control must sit fully inside its window with a margin and be wide enough for its text
+    static int layoutBad;
+    static void CheckLayout(Form f, Control c, string shot)
+    {
+        foreach (Control x in c.Controls)
+        {
+            if (!x.Visible) continue;
+            if (x is WdlButton || x is WdlToggle || x is WdlSegmented || x is WdlDropdown || x is GlyphBadge)
+            {
+                Rectangle r = f.RectangleToClient(x.RectangleToScreen(x.ClientRectangle));
+                int m = Theme.S(8);
+                Rectangle inner = Rectangle.Inflate(f.ClientRectangle, -m, -m);
+                bool inParent = true;
+                for (Control p = x.Parent; p != null && p != f; p = p.Parent)
+                {
+                    if (p is ScrollableControl && ((ScrollableControl)p).AutoScroll) break;
+                    Rectangle pr = f.RectangleToClient(p.RectangleToScreen(p.ClientRectangle));
+                    if (!pr.Contains(r)) { inParent = false; break; }
+                }
+                string why = null;
+                if (!inner.Contains(r)) why = "closer than " + m + " px to the window edge";
+                else if (!inParent) why = "clipped by its container";
+                else if (x is WdlButton && x.AutoSize && x.Width < x.GetPreferredSize(Size.Empty).Width) why = "narrower than its text";
+                if (why != null) { layoutBad++; Console.WriteLine("layout [" + shot + "] " + x.GetType().Name + " '" + x.Text + "' " + r + ": " + why); }
+            }
+            CheckLayout(f, x, shot);
+        }
+    }
+
     static void Save(Form f, string path)
     {
         f.Show();
         for (int i = 0; i < 30; i++) { Application.DoEvents(); System.Threading.Thread.Sleep(20); }
+        if (Environment.GetEnvironmentVariable("WDL_DEBUG") != null) { Console.WriteLine("client " + f.ClientSize + " size " + f.Size); foreach (Control x in f.Controls) Console.WriteLine(" child " + x.Bounds + " pref " + x.GetPreferredSize(Size.Empty)); }
+        CheckLayout(f, f, Path.GetFileNameWithoutExtension(path));
         using (Bitmap b = new Bitmap(f.ClientSize.Width, f.ClientSize.Height))
         {
             using (Graphics g = Graphics.FromImage(b))
@@ -57,6 +88,7 @@ static class Shots
             b.Save(path, ImageFormat.Png);
         }
         f.Hide();
+        if (layoutBad > 0) Environment.ExitCode = 2;
     }
 
     // a font that was disposed while a control still holds it throws "Parameter is not valid" on Windows
@@ -124,23 +156,38 @@ static class Shots
         L = Lang(root, lang); En = Lang(root, "en");
         Theme.Tr = new Func<string, string>(delegate (string k) { return T(k); });
         Theme.Init(dark, Path.Combine(Path.Combine(root, "assets"), "icons"));
+        string sc = Environment.GetEnvironmentVariable("WDL_SCALE");
+        float scaleK;
+        if (!string.IsNullOrEmpty(sc) && float.TryParse(sc, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out scaleK) && scaleK > 1f) { Theme.Scale = scaleK; Theme.FontScale = scaleK; Theme.SetFamily(null); }
         Application.EnableVisualStyles();
         string file = Path.Combine(outDir, string.Format("{0}_{1}_{2}.png", shot, lang, a[4]));
         string data = a[5];
         if (shot == "mode" || shot == "modehover")
         {
-            ModeDialog d = new ModeDialog(); d.ApplyTheme(); if (shot == "modehover") d.cardSimple.Hover(true); Save(d, file); return 0;
+            ModeDialog d = new ModeDialog(); d.ApplyTheme(); if (shot == "modehover") d.cardSimple.Hover(true); Save(d, file); return Environment.ExitCode;
         }
         if (shot == "stress") return Stress();
+        if (shot == "msgok")
+        {
+            MessageDialog d = new MessageDialog(T("msg.noBackups"), "WinDebloat Live", false, Glyph.Info); d.ApplyTheme(); Save(d, file); return Environment.ExitCode;
+        }
         if (shot == "message")
         {
-            MessageDialog d = new MessageDialog(T("msg.rpConsent", "C:"), "WinDebloat Live", true, Glyph.Warning); d.ApplyTheme(); Save(d, file); return 0;
+            MessageDialog d = new MessageDialog(T("msg.rpConsent", "C:"), "WinDebloat Live", true, Glyph.Warning); d.ApplyTheme(); Save(d, file); return Environment.ExitCode;
         }
-        if (shot == "preview")
+        if (shot == "preview" || shot == "previewset")
         {
             TextDialog d = new TextDialog(); d.Text = T("dlg.previewTitle"); d.lblHead.Text = T("dlg.previewTitle"); d.btnOk.Text = T("dlg.applyBtn");
             d.tbText.Text = File.ReadAllText(Path.Combine(data, "preview_" + lang + ".txt")).Replace("\n", "\r\n");
-            d.ApplyTheme(); d.btnOk.Text = T("dlg.applyBtn"); d.ApplyMono(); Save(d, file); return 0;
+            d.ApplyTheme(); d.btnOk.Text = T("dlg.applyBtn"); d.ApplyMono();
+            if (shot == "previewset")
+            {
+                string[] ls = d.tbText.Text.Replace("\r", "").Split('\n');
+                int idx = 0, seen = 0;
+                for (int i = 0; i < ls.Length; i++) if (ls[i].StartsWith("[") && ++seen == 2) { idx = i; break; }
+                d.tbText.ScrollTo(idx * (TextRenderer.MeasureText("Ag", Theme.Font(TextStyle.Mono)).Height + Theme.S(2)));
+            }
+            Save(d, file); return Environment.ExitCode;
         }
         if (shot == "undo")
         {
@@ -153,7 +200,7 @@ static class Shots
                 WdlItem it = new WdlItem(); it.Title = dates[i]; it.Subtitle = string.Format("{0}: {1}", T("col.changes"), n[i]);
                 it.Badge = i == 2 ? T("state.restored") : T("state.active"); it.Warn = i != 2; l.Add(it);
             }
-            d.list.SetItems(l.ToArray()); Save(d, file); return 0;
+            d.list.SetItems(l.ToArray()); Save(d, file); return Environment.ExitCode;
         }
         MainForm f = new MainForm();
         f.Text = T("app.title", "1.0.0");
@@ -179,6 +226,6 @@ static class Shots
         if (shot == "simple") f.SetLogOpen(false);
         f.Size = new Size(Theme.S(1180), Theme.S(860));
         Save(f, file);
-        return 0;
+        return Environment.ExitCode;
     }
 }

@@ -27,6 +27,7 @@ namespace WdlUi
     {
         public static bool Dark;
         public static float Scale = 1f;
+        public static float FontScale = 1f;   // test harness only: simulates system DPI font scaling
         public static string Family = "Segoe UI";
         public static string StrongFamily = null;
         public static string DisplayFamily = null;
@@ -130,7 +131,7 @@ namespace WdlUi
         public static Font Font(TextStyle s)
         {
             // fonts stay alive for the whole process: controls may still hold the previous family
-            string key = s + "|" + Family + "|" + StrongFamily + "|" + DisplayFamily + "|" + MonoFamily;
+            string key = s + "|" + FontScale + "|" + Family + "|" + StrongFamily + "|" + DisplayFamily + "|" + MonoFamily;
             Font f;
             if (fonts.TryGetValue(key, out f)) return f;
             string fam = Family; float size = 10f; FontStyle st = FontStyle.Regular; bool strong = false, display = false;
@@ -148,7 +149,7 @@ namespace WdlUi
             if (display && DisplayFamily != null) fam = DisplayFamily;
             else if (strong && StrongFamily != null) fam = StrongFamily;
             else if (strong) st = FontStyle.Bold;
-            f = new Font(fam, size, st, GraphicsUnit.Point);
+            f = new Font(fam, size * FontScale, st, GraphicsUnit.Point);
             fonts[key] = f;
             return f;
         }
@@ -498,7 +499,7 @@ namespace WdlUi
             Size t = TextRenderer.MeasureText(string.IsNullOrEmpty(Text) ? " " : Text, Font, Size.Empty, TextFormatFlags.NoPadding | TextFormatFlags.SingleLine);
             int pad = Theme.S(Large ? 30 : (Small ? 14 : 22));
             int icon = IconName != null ? Theme.S(Large ? 24 : 18) + Theme.S(8) : 0;
-            return new Size(t.Width + pad * 2 + icon, Math.Max(H, t.Height + Theme.S(12)));
+            return new Size(t.Width + pad * 2 + icon + Theme.S(2), Math.Max(H, t.Height + Theme.S(12)));
         }
         void Fit() { if (AutoSize) Size = GetPreferredSize(Size.Empty); }
         protected override void OnTextChanged(EventArgs e) { base.OnTextChanged(e); Fit(); Invalidate(); }
@@ -1390,7 +1391,7 @@ namespace WdlUi
 
             // log
             cardLog = new WdlCard(); cardLog.Fill = Surface.CardHigh; cardLog.Radius = 20; cardLog.Dock = DockStyle.Fill; cardLog.Margin = L.M(0, 12, 0, 0);
-            cardLog.Padding = L.M(16, 6, 8, 8);
+            cardLog.Padding = L.M(16, 6, 8, 6);
             TableLayoutPanel lt = L.Table(1, 2); lt.Dock = DockStyle.Fill;
             lt.RowStyles.Add(new RowStyle(SizeType.AutoSize)); lt.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); lt.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             TableLayoutPanel lh = L.Table(2, 1); lh.Dock = DockStyle.Fill; lh.AutoSize = true;
@@ -1491,7 +1492,7 @@ namespace WdlUi
         {
             logOpen = open;
             tbLog.Visible = open;
-            root.RowStyles[4] = new RowStyle(SizeType.Absolute, open ? Theme.S(150) : Theme.S(56));
+            root.RowStyles[4] = new RowStyle(SizeType.Absolute, open ? Theme.S(160) : Theme.S(62));
             btnLogToggle.Tag = open ? "@btn.logHide" : "@btn.logShow";
             btnLogToggle.Text = Theme.T(open ? "btn.logHide" : "btn.logShow");
         }
@@ -1632,33 +1633,60 @@ namespace WdlUi
     public class MessageDialog : WdlForm
     {
         public WdlLabel lblText;
+        readonly GlyphBadge badge;
+        readonly List<WdlButton> buttons = new List<WdlButton>();
+        bool sizing;
         public MessageDialog(string text, string title, bool yesNo, Glyph glyph)
         {
             FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; MinimizeBox = false; ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent; AutoSize = true; AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            Padding = L.M(26, 24, 28, 20); Text = title;
-            TableLayoutPanel t = L.Table(2, 2); t.AutoSize = true;
+            StartPosition = FormStartPosition.CenterParent; Text = title;
             Surface s = Surface.SecondaryContainer; ColorRole r = ColorRole.OnSecondaryContainer;
             if (glyph == Glyph.Warning) { s = Surface.TertiaryContainer; r = ColorRole.OnTertiaryContainer; }
             if (glyph == Glyph.Error) { s = Surface.TertiaryContainer; r = ColorRole.Error; }
-            GlyphBadge gb = new GlyphBadge(glyph, s, r); gb.Margin = L.M(0, 0, 18, 0);
-            lblText = new WdlLabel(text, TextStyle.Body, ColorRole.OnSurface); lblText.MaximumSize = new Size(Theme.S(480), 0); lblText.MinimumSize = new Size(Theme.S(300), 0);
-            lblText.Margin = L.M(0, 4, 0, 0);
-            FlowLayoutPanel b = L.Flow(false, false); b.Anchor = AnchorStyles.Right; b.Margin = L.M(0, 22, 0, 0);
+            badge = new GlyphBadge(glyph, s, r);
+            lblText = new WdlLabel(text, TextStyle.Body, ColorRole.OnSurface);
             if (yesNo)
             {
                 WdlButton no = new WdlButton("@dlg.no", ButtonKind.Outlined, null); no.DialogResult = DialogResult.No;
-                WdlButton yes = new WdlButton("@dlg.yes", ButtonKind.Filled, null); yes.DialogResult = DialogResult.Yes; yes.Margin = L.M(10, 0, 0, 0);
-                b.Controls.Add(no); b.Controls.Add(yes); AcceptButton = yes; CancelButton = no;
+                WdlButton yes = new WdlButton("@dlg.yes", ButtonKind.Filled, null); yes.DialogResult = DialogResult.Yes;
+                buttons.Add(no); buttons.Add(yes); AcceptButton = yes; CancelButton = no;
             }
             else
             {
-                WdlButton ok = new WdlButton("@dlg.ok", ButtonKind.Filled, null); ok.DialogResult = DialogResult.OK; ok.MinimumSize = new Size(Theme.S(96), 0);
-                b.Controls.Add(ok); AcceptButton = ok; CancelButton = ok;
+                WdlButton ok = new WdlButton("@dlg.ok", ButtonKind.Filled, null); ok.DialogResult = DialogResult.OK;
+                buttons.Add(ok); AcceptButton = ok; CancelButton = ok;
             }
-            t.Controls.Add(gb, 0, 0); t.Controls.Add(lblText, 1, 0); t.Controls.Add(b, 1, 1);
-            Controls.Add(t);
+            Controls.Add(badge); Controls.Add(lblText);
+            foreach (WdlButton x in buttons) { x.MinimumSize = new Size(Theme.S(96), 0); Controls.Add(x); }
         }
+        // explicit layout in client pixels: 24 dp margins, icon | wrapped text, buttons right-aligned below
+        void Fit()
+        {
+            if (sizing || badge == null) return;
+            sizing = true;
+            try
+            {
+                int m = Theme.S(24), gap = Theme.S(16), bgap = Theme.S(10);
+                badge.Size = new Size(Theme.S(48), Theme.S(48));
+                lblText.MaximumSize = new Size(Theme.S(480), 0);
+                Size ts = lblText.GetPreferredSize(Size.Empty);
+                int bw = 0, bh = 0;
+                foreach (WdlButton x in buttons) { Size p = x.GetPreferredSize(Size.Empty); x.Size = new Size(Math.Max(Theme.S(96), p.Width), p.Height); bw += x.Width; bh = Math.Max(bh, x.Height); }
+                bw += bgap * (buttons.Count - 1);
+                int textW = Math.Max(Math.Max(ts.Width, Theme.S(280)), bw - badge.Width - gap);
+                int cw = m + badge.Width + gap + textW + m;
+                badge.Location = new Point(m, m);
+                int ty = m + Math.Max(0, (badge.Height - TextRenderer.MeasureText("Ag", lblText.Font).Height) / 2);
+                lblText.Location = new Point(m + badge.Width + gap, ty);
+                int by = Math.Max(badge.Bottom, lblText.Top + ts.Height) + Theme.S(24);
+                int x0 = cw - m - bw;
+                foreach (WdlButton x in buttons) { x.Location = new Point(x0, by); x0 += x.Width + bgap; }
+                ClientSize = new Size(cw, by + bh + m);
+            }
+            finally { sizing = false; }
+        }
+        protected override void OnLayout(LayoutEventArgs e) { base.OnLayout(e); Fit(); }
+        protected override void OnFontChanged(EventArgs e) { base.OnFontChanged(e); Fit(); }
         public static DialogResult Show(IWin32Window owner, string text, string title, bool yesNo, Glyph glyph)
         {
             using (MessageDialog d = new MessageDialog(text, title, yesNo, glyph))

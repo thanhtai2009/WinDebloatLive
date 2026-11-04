@@ -110,6 +110,8 @@ $txt = Format-WdlPreview -Plan $plan -Lang 'en'
 Assert ($txt -match 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent\\DisableWindowsConsumerFeatures: 0 \(DWord\) -> 1' -and $txt -match 'Microsoft.BingNews' -and $txt -match 'DefaultUser\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\OneDriveSetup') 'preview lists exact before -> after changes'
 $txtVi = Format-WdlPreview -Plan $plan -Lang 'vi'
 Assert ($txtVi -match 'Ứng dụng sẽ gỡ') 'preview in Vietnamese'
+Assert ($txtVi -match 'Thiết lập sẽ thay đổi' -and $txtVi -match 'Ẩn Copilot khỏi thanh tác vụ' -and $txt -match 'Hides Copilot from the taskbar') 'preview explains each setting in plain language (en + vi)'
+Assert ($txt -match '(?m)^  - Turn off Copilot.*\r?\n    Hides Copilot.*\r?\n      HK') 'preview: name, effect, then the technical change'
 $bdir = Join-Path $script:MockDataDir 'backups'
 $res = Invoke-WdlApply -Session $s -Plan $plan -RestorePoint (New-WdlObj @{ Ok = $true; Sequence = 6 }) -BackupDir $bdir
 Assert ($res.Failed -eq 0 -and $res.Done -gt 10 -and $res.Reboot) "apply finished ($($res.Done) changes, $($res.Failed) failed)"
@@ -172,6 +174,11 @@ Assert (@(Test-WdlRulesPolicy @{ protected = @() } $ext | Where-Object { $_ -lik
 $bad = ConvertFrom-WdlJson ($ext | ConvertTo-Json -Depth 20)
 $bad['tweaks'][0]['services'][0]['startType'] = 'Boot'
 Assert (@(Test-WdlTweakData $bad).Count -ge 1) 'invalid service start type rejected'
+$eff = ConvertFrom-WdlJson ($ext | ConvertTo-Json -Depth 20)
+$eff['tweaks'][0]['effect'] = @{ en = 'x'; vi = 'y' }
+Assert (@(Test-WdlTweakData $eff).Count -eq 0) 'optional effect text accepted (rules without it stay valid)'
+$eff['tweaks'][0]['effect'] = 5
+Assert (@(Test-WdlTweakData $eff).Count -ge 1) 'malformed effect rejected'
 Reset-Mock; Set-MockOs 26100
 Set-MockValue 'HKLM' 'SYSTEM\CurrentControlSet\Services\DiagTrack' 'Start' 'DWord' 2
 Set-MockValue 'HKLM' 'SYSTEM\CurrentControlSet\Services\DiagTrack' 'DelayedAutostart' 'DWord' 1

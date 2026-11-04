@@ -21,6 +21,10 @@
         "zh-CN": "关闭消费者功能 / 推荐应用自动安装",
         "km": "បិទមុខងារអ្នកប្រើប្រាស់ និងការដំឡើងកម្មវិធីណែនាំ"
       },
+      "effect": {
+        "vi": "Windows ngừng tự cài ứng dụng, trò chơi được gợi ý và bớt hiển thị quảng cáo của Microsoft.",
+        "en": "Windows stops installing suggested apps and games on its own and shows fewer Microsoft promotions."
+      },
       "set": [
         {
           "hive": "SOFTWARE",
@@ -63,6 +67,10 @@
         "zh-CN": "通过组策略关闭 Windows Copilot",
         "km": "បិទ Windows Copilot (គោលការណ៍)"
       },
+      "effect": {
+        "vi": "Ẩn Copilot khỏi thanh tác vụ và chặn Copilot trong Windows; vẫn dùng được Copilot trên web.",
+        "en": "Hides Copilot from the taskbar and blocks it in Windows; you can still use Copilot on the web."
+      },
       "set": [
         {
           "hive": "SOFTWARE",
@@ -91,6 +99,10 @@
       "bootWim": false,
       "name": { "vi": "Tắt bảng tin Widgets", "en": "Turn off the Widgets news feed", "zh-CN": "关闭小组件资讯", "km": "បិទព័ត៌មាន Widgets" },
       "description": { "vi": "Tắt tin tức Widgets", "en": "Turn off Widgets news feed", "zh-CN": "关闭小组件资讯源", "km": "បិទព័ត៌មានក្នុង Widgets" },
+      "effect": {
+        "vi": "Bảng Widgets không còn hiện tin tức MSN.",
+        "en": "The Widgets board no longer shows the MSN news feed."
+      },
       "set": [
         {
           "hive": "SOFTWARE",
@@ -121,6 +133,10 @@
         "en": "Stop Teams/Chat auto-install",
         "zh-CN": "阻止 Teams/聊天自动安装",
         "km": "រារាំង Teams/Chat មិនឱ្យដំឡើងដោយស្វ័យប្រវត្តិ"
+      },
+      "effect": {
+        "vi": "Windows không tự cài lại ứng dụng Teams cá nhân (Chat) nữa.",
+        "en": "Windows no longer reinstalls the personal Teams (Chat) app on its own."
       },
       "set": [
         {
@@ -153,6 +169,10 @@
         "zh-CN": "BypassNRO=1 (允许无网络安装 / 使用本地账户)",
         "km": "BypassNRO=1 (អនុញ្ញាតដំឡើងដោយគ្មានអ៊ីនធឺណិត / គណនីមូលដ្ឋាន)"
       },
+      "effect": {
+        "vi": "Khi cài mới, Windows Setup cho phép hoàn tất không cần mạng và dùng tài khoản cục bộ.",
+        "en": "Windows Setup on a new installation can finish without internet and with a local account."
+      },
       "set": [
         {
           "hive": "SOFTWARE",
@@ -182,6 +202,10 @@
         "en": "New users: no suggestions / silent app installs / Start recommendations",
         "zh-CN": "新用户: 关闭建议、静默安装应用和“开始”推荐",
         "km": "អ្នកប្រើថ្មី: បិទការណែនាំ ការដំឡើងកម្មវិធីស្ងាត់ៗ និងការណែនាំក្នុង Start"
+      },
+      "effect": {
+        "vi": "Tài khoản mới không có mẹo, ứng dụng gợi ý, tự cài ứng dụng hay quảng cáo trên màn hình khoá và Start.",
+        "en": "New accounts start without tips, suggested apps, silent app installs or ads on the lock screen and Start."
       },
       "set": [
         {
@@ -358,6 +382,10 @@
         "zh-CN": "隐藏任务栏上的聊天按钮 (新用户)",
         "km": "លាក់ប៊ូតុង Chat លើរបារភារកិច្ច (អ្នកប្រើថ្មី)"
       },
+      "effect": {
+        "vi": "Bỏ nút Chat (Teams) khỏi thanh tác vụ của tài khoản mới.",
+        "en": "Removes the Chat (Teams) button from the taskbar of new accounts."
+      },
       "set": [
         {
           "hive": "NTUSER",
@@ -388,6 +416,10 @@
         "en": "Remove OOBE auto-install tasks (Outlook, Dev Home, Cross Device)",
         "zh-CN": "删除安装时自动安装 Outlook、Dev Home、Cross Device 的任务",
         "km": "លុបភារកិច្ចដំឡើង Outlook, Dev Home, Cross Device ដោយស្វ័យប្រវត្តិពេលរៀបចំ"
+      },
+      "effect": {
+        "vi": "Không còn màn hình \"hoàn tất thiết lập thiết bị\" và việc tự cài Outlook, Dev Home đi kèm.",
+        "en": "Stops the \"finish setting up your device\" screens and the automatic installs of Outlook and Dev Home they trigger."
       },
       "deleteKey": [
         {
@@ -425,6 +457,10 @@
         "en": "Disable consumer features / suggested apps",
         "zh-CN": "关闭消费者功能 / 推荐应用自动安装",
         "km": "បិទមុខងារអ្នកប្រើប្រាស់ និងការដំឡើងកម្មវិធីណែនាំ"
+      },
+      "effect": {
+        "vi": "Windows ngừng tự cài ứng dụng, trò chơi được gợi ý và bớt hiển thị quảng cáo của Microsoft.",
+        "en": "Windows stops installing suggested apps and games on its own and shows fewer Microsoft promotions."
       },
       "set": [
         {
@@ -471,6 +507,10 @@
         "en": "New users: no silent app installs / suggestions / lock-screen ads",
         "zh-CN": "新用户: 关闭静默安装应用、建议和锁屏广告",
         "km": "អ្នកប្រើថ្មី: បិទការដំឡើងកម្មវិធីស្ងាត់ៗ ការណែនាំ និងពាណិជ្ជកម្មលើអេក្រង់ចាក់សោ"
+      },
+      "effect": {
+        "vi": "Tài khoản mới không có mẹo, ứng dụng gợi ý, tự cài ứng dụng hay quảng cáo trên màn hình khoá và Start.",
+        "en": "New accounts start without tips, suggested apps, silent app installs or ads on the lock screen and Start."
       },
       "set": [
         {
@@ -638,6 +678,10 @@
         "zh-CN": "关闭 Cortana 以及“开始”搜索中的网页/Bing 结果",
         "km": "បិទ Cortana និងលទ្ធផលវេប/Bing ក្នុងការស្វែងរក Start"
       },
+      "effect": {
+        "vi": "Tắt Cortana; tìm kiếm trong Start chỉ hiện kết quả trên máy, không hiện Bing.",
+        "en": "Turns off Cortana; Start search shows only results from this PC, not Bing."
+      },
       "set": [
         {
           "hive": "SOFTWARE",
@@ -708,6 +752,10 @@
         "zh-CN": "遥测降至该版本允许的最低级别 (家庭版/专业版 = 必需, 企业版/教育版 = 安全)",
         "km": "កំណត់ telemetry ត្រឹមកម្រិតទាបបំផុតដែលកំណែអនុញ្ញាត (Home/Pro = Required, Ent/Edu = Security)"
       },
+      "effect": {
+        "vi": "Windows chỉ gửi dữ liệu chẩn đoán tối thiểu mà phiên bản cho phép và không hỏi ý kiến phản hồi; báo cáo sự cố sẽ ít chi tiết hơn.",
+        "en": "Windows sends only the minimum diagnostic data your edition allows and stops asking for feedback; troubleshooting reports become less detailed."
+      },
       "set": [
         {
           "hive": "SOFTWARE",
@@ -755,6 +803,10 @@
         "zh-CN": "关闭资讯和兴趣 (任务栏天气/新闻)",
         "km": "បិទព័ត៌មាន និងចំណាប់អារម្មណ៍ (អាកាសធាតុ/ព័ត៌មានលើរបារភារកិច្ច)"
       },
+      "effect": {
+        "vi": "Bỏ nút thời tiết và tin tức khỏi thanh tác vụ.",
+        "en": "Removes the weather and news button from the taskbar."
+      },
       "set": [
         {
           "hive": "SOFTWARE",
@@ -788,6 +840,10 @@
         "en": "Hide Meet Now and People on the taskbar",
         "zh-CN": "隐藏任务栏上的“立即开会”和“人脉”",
         "km": "លាក់ Meet Now និង People លើរបារភារកិច្ច"
+      },
+      "effect": {
+        "vi": "Bỏ biểu tượng Meet Now và People khỏi thanh tác vụ.",
+        "en": "Removes the Meet Now and People icons from the taskbar."
       },
       "set": [
         {
@@ -831,6 +887,10 @@
         "zh-CN": "通过组策略关闭 Windows Copilot (如通过更新安装)",
         "km": "បិទ Windows Copilot (គោលការណ៍ ប្រសិនបើមកតាមការអាប់ដេត)"
       },
+      "effect": {
+        "vi": "Ẩn Copilot khỏi thanh tác vụ và chặn Copilot trong Windows; vẫn dùng được Copilot trên web.",
+        "en": "Hides Copilot from the taskbar and blocks it in Windows; you can still use Copilot on the web."
+      },
       "set": [
         {
           "hive": "SOFTWARE",
@@ -870,6 +930,10 @@
         "zh-CN": "删除安装时自动安装 Outlook、Dev Home 的任务 (如存在)",
         "km": "លុបភារកិច្ចដំឡើង Outlook, Dev Home ដោយស្វ័យប្រវត្តិពេលរៀបចំ (បើមាន)"
       },
+      "effect": {
+        "vi": "Không còn màn hình \"hoàn tất thiết lập thiết bị\" và việc tự cài Outlook, Dev Home đi kèm.",
+        "en": "Stops the \"finish setting up your device\" screens and the automatic installs of Outlook and Dev Home they trigger."
+      },
       "deleteKey": [
         {
           "hive": "SOFTWARE",
@@ -902,6 +966,10 @@
         "zh-CN": "不为新用户自动安装 OneDrive (可选)",
         "km": "មិនដំឡើង OneDrive ដោយស្វ័យប្រវត្តិសម្រាប់អ្នកប្រើថ្មី (ស្រេចចិត្ត)"
       },
+      "effect": {
+        "vi": "Tài khoản mới không tự cài OneDrive; có thể cài sau từ onedrive.com.",
+        "en": "New accounts do not get OneDrive installed automatically; you can install it later from onedrive.com."
+      },
       "deleteValue": [
         {
           "hive": "NTUSER",
@@ -929,6 +997,10 @@
         "en": "LabConfig values in boot.wim (Setup, index 2) and install.wim, MoSetup upgrade flag, no \"unsupported hardware\" notice. Unsupported PCs may not get feature updates.",
         "zh-CN": "在 boot.wim (安装程序, 索引 2) 和 install.wim 中写入 LabConfig, 允许在不受支持的硬件上升级并隐藏“硬件不受支持”提示。不受支持的电脑可能收不到功能更新。",
         "km": "សរសេរ LabConfig ទៅក្នុង boot.wim (Setup, index 2) និង install.wim អនុញ្ញាតឱ្យអាប់គ្រេដលើម៉ាស៊ីនមិនគាំទ្រ និងលាក់សារ \"ផ្នែករឹងមិនគាំទ្រ\"។ ម៉ាស៊ីនមិនគាំទ្រអាចមិនទទួលបានការអាប់ដេតមុខងារ។"
+      },
+      "effect": {
+        "vi": "Windows Setup bỏ qua kiểm tra TPM, Secure Boot, RAM và CPU; máy không được hỗ trợ có thể không nhận bản cập nhật tính năng.",
+        "en": "Windows Setup skips the TPM, Secure Boot, RAM and CPU checks; unsupported PCs may not receive feature updates."
       },
       "set": [
         { "hive": "SYSTEM", "key": "Setup\\LabConfig", "name": "BypassTPMCheck", "type": "REG_DWORD", "value": "1", "undo": { "action": "delete" } },
@@ -1018,6 +1090,10 @@
         "zh-CN": "遥测降至该版本允许的最低级别, 关闭反馈提示和广告 ID",
         "km": "កំណត់ telemetry ទាបបំផុតដែលកំណែអនុញ្ញាត បិទការរំលឹកមតិកែលម្អ និង advertising ID"
       },
+      "effect": {
+        "vi": "Windows chỉ gửi dữ liệu chẩn đoán tối thiểu mà phiên bản cho phép và không hỏi ý kiến phản hồi; báo cáo sự cố sẽ ít chi tiết hơn.",
+        "en": "Windows sends only the minimum diagnostic data your edition allows and stops asking for feedback; troubleshooting reports become less detailed."
+      },
       "set": [
         {
           "hive": "SOFTWARE",
@@ -1059,6 +1135,10 @@
         "zh-CN": "应用无法使用广告 ID 投放个性化广告 (策略 + 新用户)",
         "km": "កម្មវិធីមិនអាចប្រើ Advertising ID សម្រាប់ពាណិជ្ជកម្មផ្ទាល់ខ្លួន (គោលការណ៍ + អ្នកប្រើថ្មី)"
       },
+      "effect": {
+        "vi": "Ứng dụng không dùng được mã quảng cáo để hiện quảng cáo theo sở thích.",
+        "en": "Apps can no longer use your advertising ID to show personalised ads."
+      },
       "set": [
         {
           "hive": "SOFTWARE",
@@ -1097,6 +1177,10 @@
         "zh-CN": "Microsoft 不使用诊断数据向新用户推送提示和广告",
         "km": "Microsoft មិនប្រើទិន្នន័យវិនិច្ឆ័យសម្រាប់គន្លឹះ និងពាណិជ្ជកម្ម (អ្នកប្រើថ្មី)"
       },
+      "effect": {
+        "vi": "Microsoft không dùng dữ liệu chẩn đoán để cá nhân hoá mẹo, quảng cáo và đề xuất.",
+        "en": "Microsoft stops using your diagnostic data to personalise tips, ads and recommendations."
+      },
       "set": [
         {
           "hive": "NTUSER",
@@ -1134,6 +1218,10 @@
         "en": "Taskbar search only searches this PC (policy + new users)",
         "zh-CN": "任务栏搜索只搜索本机 (策略 + 新用户)",
         "km": "ការស្វែងរកលើរបារភារកិច្ចស្វែងរកតែក្នុងម៉ាស៊ីននេះ (គោលការណ៍ + អ្នកប្រើថ្មី)"
+      },
+      "effect": {
+        "vi": "Tìm kiếm của Windows chỉ hiện tệp, ứng dụng và thiết lập trên máy, không có kết quả web Bing.",
+        "en": "Windows search shows only files, apps and settings from this PC, without Bing web results."
       },
       "set": [
         {
@@ -1182,6 +1270,10 @@
         "zh-CN": "禁止 Recall 保存屏幕快照用于 AI 分析 (策略, Windows 11 24H2 及更高版本)",
         "km": "រារាំង Recall មិនឱ្យរក្សារូបថតអេក្រង់សម្រាប់ការវិភាគ AI (គោលការណ៍ Windows 11 24H2 ឡើងទៅ)"
       },
+      "effect": {
+        "vi": "Recall không còn lưu ảnh chụp màn hình để tìm kiếm bằng AI.",
+        "en": "Recall can no longer save snapshots of your screen for AI search."
+      },
       "set": [
         {
           "hive": "SOFTWARE",
@@ -1223,6 +1315,10 @@
         "zh-CN": "隐藏小组件按钮并关闭小组件面板 (策略)",
         "km": "លាក់ប៊ូតុង Widgets និងបិទផ្ទាំង Widgets (គោលការណ៍)"
       },
+      "effect": {
+        "vi": "Ẩn nút Widgets và tắt hẳn bảng Widgets.",
+        "en": "Hides the Widgets button and turns off the Widgets board entirely."
+      },
       "set": [
         {
           "hive": "SOFTWARE",
@@ -1253,6 +1349,10 @@
         "zh-CN": "不为新用户自动安装 OneDrive (可选, 之后可从 onedrive.com 安装)",
         "km": "មិនដំឡើង OneDrive ដោយស្វ័យប្រវត្តិសម្រាប់អ្នកប្រើថ្មី (ស្រេចចិត្ត អាចដំឡើងពី onedrive.com)"
       },
+      "effect": {
+        "vi": "Tài khoản mới không tự cài OneDrive; có thể cài sau từ onedrive.com.",
+        "en": "New accounts do not get OneDrive installed automatically; you can install it later from onedrive.com."
+      },
       "deleteValue": [
         {
           "hive": "NTUSER",
@@ -1281,6 +1381,10 @@
         "en": "Windows does not keep about 7 GB aside for updates; on a full disk updates may fail",
         "zh-CN": "Windows 不再为更新预留约 7 GB; 磁盘已满时更新可能失败",
         "km": "Windows មិនទុកទំហំប្រហែល 7 GB សម្រាប់ការអាប់ដេត; ពេលថាសពេញ ការអាប់ដេតអាចបរាជ័យ"
+      },
+      "effect": {
+        "vi": "Giải phóng khoảng 7 GB Windows giữ cho bản cập nhật; khi ổ gần đầy, cập nhật có thể thất bại.",
+        "en": "Frees about 7 GB that Windows keeps for updates; on a nearly full disk updates may then fail."
       },
       "set": [
         {

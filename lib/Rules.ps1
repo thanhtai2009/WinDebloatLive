@@ -111,6 +111,8 @@ function Test-WdlTweakData {
         if (-not ((Get-WdlJsonVal $t 'bootWim' $false) -is [bool])) { $bad += "${tag}: bootWim must be true or false" }
         if (-not (Test-WdlLangTable (Get-WdlJsonVal $t 'name'))) { $bad += "${tag}: name needs vi, en, zh-CN and km" }
         if (-not (Test-WdlLangTable (Get-WdlJsonVal $t 'description'))) { $bad += "${tag}: description needs vi, en, zh-CN and km" }
+        $eff = Get-WdlJsonVal $t 'effect' $null
+        if ($null -ne $eff -and -not ($eff -is [Collections.IDictionary] -and [string](Get-WdlJsonVal $eff 'en' ''))) { $bad += "${tag}: effect (optional) needs at least an en text" }
         $ops = 0
         foreach ($kind in @('set', 'deleteKey', 'deleteValue')) {
             $i = 0
@@ -179,7 +181,7 @@ function Import-WdlTweakData {
     foreach ($t in @(Get-WdlJsonVal $d 'tweaks' @())) {
         $n++
         if ($badIdx.ContainsKey($n)) { continue }
-        $e = @{ Id = [string]$t['id']; Names = $t['name']; Descriptions = $t['description']
+        $e = @{ Id = [string]$t['id']; Names = $t['name']; Descriptions = $t['description']; Effects = (Get-WdlJsonVal $t 'effect' $null)
             Name = (Get-WdlLangText $t['name'] 'en'); Category = [string]$t['category']; Level = [string]$t['level']
             Default = ($t['default'] -eq $true); Os = [string]$t['os'] }
         if (Get-WdlJsonVal $t 'minBuild') { $e.MinBuild = [int]$t['minBuild'] }
