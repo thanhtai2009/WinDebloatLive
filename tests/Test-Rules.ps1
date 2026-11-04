@@ -45,18 +45,47 @@ function New-TweakWithOp($op, [string]$kind = 'set') {
     $t['tweaks'] = @($t['tweaks']) + @($x)
     return , $t
 }
-$run = [ordered]@{ hive = 'SOFTWARE'; key = 'Microsoft\Windows\CurrentVersion\Run'; name = 'x'; type = 'String'; value = 'c:\x.exe' }
-Assert (@(Test-WdlRulesContent $bundledApps (New-TweakWithOp $run)).Count -gt 0) 'policy: a downloaded Run key write is rejected'
-$ifeo = [ordered]@{ hive = 'SOFTWARE'; key = 'Microsoft\Windows NT\CurrentVersion\Image File Execution Options\a.exe'; name = 'Debugger'; type = 'String'; value = 'x' }
-Assert (@(Test-WdlRulesContent $bundledApps (New-TweakWithOp $ifeo)).Count -gt 0) 'policy: Image File Execution Options Debugger is rejected'
+# rejected by the download policy only (a well-formed rule, so the test cannot pass on a format error)
+function Test-PolicyReject($t) {
+    $e = @(Test-WdlRulesContent $bundledApps $t)
+    return ($e.Count -gt 0 -and @($e | Where-Object { $_ -notmatch 'not allowed for downloaded rules|: protected (service|task|feature)$' }).Count -eq 0)
+}
+$del = [ordered]@{ action = 'delete' }; $none = [ordered]@{ action = 'none' }
+$run = [ordered]@{ hive = 'SOFTWARE'; key = 'Microsoft\Windows\CurrentVersion\Run'; name = 'x'; type = 'REG_SZ'; value = 'c:\x.exe'; undo = $del }
+Assert (Test-PolicyReject (New-TweakWithOp $run)) 'policy: a downloaded Run key write is rejected'
+$ifeo = [ordered]@{ hive = 'SOFTWARE'; key = 'Microsoft\Windows NT\CurrentVersion\Image File Execution Options\a.exe'; name = 'Debugger'; type = 'REG_SZ'; value = 'x'; undo = $del }
+Assert (Test-PolicyReject (New-TweakWithOp $ifeo)) 'policy: Image File Execution Options Debugger is rejected'
 $svc = [ordered]@{ name = 'WinDefend'; startType = 'Disabled' }
-Assert (@(Test-WdlRulesContent $bundledApps (New-TweakWithOp $svc 'services')).Count -gt 0) 'policy: disabling a blocked service (WinDefend) is rejected'
+Assert (Test-PolicyReject (New-TweakWithOp $svc 'services')) 'policy: disabling a blocked service (WinDefend) is rejected'
 $okSvc = [ordered]@{ name = 'DiagTrack'; startType = 'Disabled' }
 Assert (@(Test-WdlRulesContent $bundledApps (New-TweakWithOp $okSvc 'services')).Count -eq 0) 'extension: disabling DiagTrack is a valid service rule'
 $badTask = [ordered]@{ path = '\Microsoft\Windows\Application Experience\'; name = 'ProgramDataUpdater'; state = 'Enabled' }
 Assert (@(Test-WdlRulesContent $bundledApps (New-TweakWithOp $badTask 'tasks')).Count -gt 0) 'extension: tasks can only be disabled'
 $feat = [ordered]@{ name = 'NetFx4-AdvSrvs'; state = 'Disabled' }
-Assert (@(Test-WdlRulesContent $bundledApps (New-TweakWithOp $feat 'features')).Count -gt 0) 'policy: disabling a blocked feature is rejected'
+Assert (Test-PolicyReject (New-TweakWithOp $feat 'features')) 'policy: disabling a blocked feature is rejected'
+$delSvc = [ordered]@{ hive = 'SYSTEM'; key = 'CurrentControlSet\Services\WinDefend'; undo = $none }
+Assert (Test-PolicyReject (New-TweakWithOp $delSvc 'deleteKey')) 'policy: a downloaded deleteKey of a service key is rejected'
+$delUserinit = [ordered]@{ hive = 'SOFTWARE'; key = 'Microsoft\Windows NT\CurrentVersion\Winlogon'; name = 'Userinit'; undo = $none }
+Assert (Test-PolicyReject (New-TweakWithOp $delUserinit 'deleteValue')) 'policy: a downloaded deleteValue of Winlogon Userinit is rejected'
+$delLua = [ordered]@{ hive = 'SOFTWARE'; key = 'Microsoft\Windows\CurrentVersion\Policies\System'; name = 'EnableLUA'; undo = $none }
+Assert (Test-PolicyReject (New-TweakWithOp $delLua 'deleteValue')) 'policy: a downloaded deleteValue of EnableLUA (UAC) is rejected'
+$delRun = [ordered]@{ hive = 'NTUSER'; key = 'Software\Microsoft\Windows\CurrentVersion\Run'; name = 'Contoso'; undo = $none }
+Assert (@(Test-WdlRulesContent $bundledApps (New-TweakWithOp $delRun 'deleteValue')).Count -eq 0) 'policy: deleting an autostart (Run) entry stays allowed'
+foreach ($w in @(
+        [ordered]@{ hive = 'NTUSER'; key = 'Environment'; name = 'windir'; type = 'REG_SZ'; value = 'x'; undo = $del },
+        [ordered]@{ hive = 'NTUSER'; key = 'Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders'; name = 'Startup'; type = 'REG_SZ'; value = 'x'; undo = $del },
+        [ordered]@{ hive = 'SYSTEM'; key = 'Setup'; name = 'CmdLine'; type = 'REG_SZ'; value = 'x'; undo = $del },
+        [ordered]@{ hive = 'SOFTWARE'; key = 'Microsoft\Windows\CurrentVersion\Policies\System'; name = 'ConsentPromptBehaviorAdmin'; type = 'REG_DWORD'; value = 0; undo = $del })) {
+    Assert (Test-PolicyReject (New-TweakWithOp $w)) "policy: a downloaded write to $($w.key)\$($w.name) is rejected"
+}
+$okSet = [ordered]@{ hive = 'NTUSER'; key = 'Software\Contoso'; name = 'x'; type = 'REG_DWORD'; value = 1; undo = $del }
+Assert (@(Test-WdlRulesContent $bundledApps (New-TweakWithOp $okSet)).Count -eq 0) 'policy probe: a plain well-formed write is accepted (the probes above fail on policy, not format)'
+$defTask = [ordered]@{ path = '\Microsoft\Windows\Windows Defender\'; name = 'Windows Defender Scheduled Scan'; state = 'Disabled' }
+Assert (Test-PolicyReject (New-TweakWithOp $defTask 'tasks')) 'policy: disabling a protected task (Defender scan) is rejected'
+$okTask = [ordered]@{ path = '\Microsoft\Windows\Application Experience\'; name = 'ProgramDataUpdater'; state = 'Disabled' }
+Assert (@(Test-WdlRulesContent $bundledApps (New-TweakWithOp $okTask 'tasks')).Count -eq 0) 'extension: disabling a telemetry task is a valid task rule'
+Assert ((Get-WdlTaskBlockReason '\Microsoft\Windows\UpdateOrchestrator\' 'Schedule Scan') -and -not (Get-WdlTaskBlockReason '\Microsoft\Windows\Customer Experience Improvement Program\' 'Consolidator')) 'task blocklist: update tasks blocked, CEIP allowed'
+Assert ((Get-WdlServiceBlockReason 'webthreatdefusersvc_1a2b3') -and (Get-WdlServiceBlockReason 'EventSystem') -and -not (Get-WdlServiceBlockReason 'DiagTrack')) 'service blocklist: per-user Defender service and EventSystem blocked'
 
 # ---------------- URL checks ----------------
 Assert (Test-WdlRulesUrl $script:WDL.RulesBaseUrl) 'default rules URL accepted (HTTPS, raw.githubusercontent.com, rules repository)'

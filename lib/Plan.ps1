@@ -35,7 +35,16 @@ $script:WdlBlockedServices = @(
     'BrokerInfrastructure', 'Audiosrv', 'AudioEndpointBuilder', 'PlugPlay', 'LanmanWorkstation', 'netprofm', 'NlaSvc', 'VaultSvc',
     'KeyIso', 'Netlogon', 'StorSvc', 'DeviceInstall', 'DsmSvc', 'wlidsvc', 'InstallService', 'camsvc', 'EFS', 'TimeBrokerSvc',
     'CDPSvc', 'Wcmsvc', 'WlanSvc', 'iphlpsvc', 'ShellHWDetection', 'Themes', 'FontCache', 'WinHttpAutoProxySvc', 'Appinfo', 'seclogon',
-    'VSS', 'swprv', 'SDRSVC', 'smphost', 'TabletInputService', 'TextInputManagementService', 'DispBrokerDesktopSvc', 'WpnService'
+    'VSS', 'swprv', 'SDRSVC', 'smphost', 'TabletInputService', 'TextInputManagementService', 'DispBrokerDesktopSvc', 'WpnService',
+    'EventSystem', 'NgcSvc', 'NgcCtnrSvc', 'WbioSrvc', 'AppReadiness', 'LicenseManager', 'SgrmBroker', 'webthreatdefsvc', 'webthreatdefusersvc*',
+    'MDCoreSvc', 'mpsdrv'
+)
+# scheduled task folders that are never disabled (security, updates, restore points, encryption, licensing)
+$script:WdlBlockedTasks = @(
+    '\Microsoft\Windows\Windows Defender\*', '\Microsoft\Windows\WindowsUpdate\*', '\Microsoft\Windows\UpdateOrchestrator\*',
+    '\Microsoft\Windows\WaaSMedic\*', '\Microsoft\Windows\SystemRestore\*', '\Microsoft\Windows\BitLocker\*', '\Microsoft\Windows\TPM\*',
+    '\Microsoft\Windows\Time Synchronization\*', '\Microsoft\Windows\SoftwareProtectionPlatform\*', '\Microsoft\Windows\TaskScheduler\*',
+    '\Microsoft\Windows\AppxDeploymentClient\*', '\Microsoft\Windows\User Profile Service\*', '\Microsoft\Windows\Servicing\*'
 )
 # optional features that are never disabled
 $script:WdlBlockedFeatures = @('NetFx4*', 'Windows-Defender*', 'SearchEngine-Client-Package', 'Microsoft-Windows-Client-*', 'Printing-PrintToPDFServices-Features', 'MSRDC-Infrastructure')
@@ -52,6 +61,11 @@ function Get-WdlAppBlockReason {
 
 function Get-WdlServiceBlockReason([string]$Name) {
     if (Test-WdlLike $Name $script:WdlBlockedServices) { return 'critical service (built-in blocklist)' }
+    return $null
+}
+
+function Get-WdlTaskBlockReason([string]$Path, [string]$Name) {
+    if (Test-WdlLike ($Path + $Name) $script:WdlBlockedTasks) { return 'critical scheduled task (built-in blocklist)' }
     return $null
 }
 
@@ -265,7 +279,12 @@ function New-WdlPlan {
             if ($b) { $plan.Skipped += @{ What = "Service $($s.Name)"; Reason = $b }; continue }
             $plan.Services += @{ TweakId = $t.Id; Name = $s.Name; StartType = $s.StartType }
         }
-        foreach ($s in @($t.Tasks)) { if ($s) { $plan.Tasks += @{ TweakId = $t.Id; Path = $s.Path; Name = $s.Name } } }
+        foreach ($s in @($t.Tasks)) {
+            if (-not $s) { continue }
+            $b = Get-WdlTaskBlockReason $s.Path $s.Name
+            if ($b) { $plan.Skipped += @{ What = "Task $($s.Path)$($s.Name)"; Reason = $b }; continue }
+            $plan.Tasks += @{ TweakId = $t.Id; Path = $s.Path; Name = $s.Name }
+        }
         foreach ($s in @($t.Features)) {
             if (-not $s) { continue }
             $b = Get-WdlFeatureBlockReason $s.Name

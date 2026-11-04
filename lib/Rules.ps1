@@ -247,9 +247,15 @@ $script:WdlRulesDenyKeys = @(
     '(^|\\)(CurrentControlSet|ControlSet\d+)\\Services(\\|$)', '(^|\\)(CurrentControlSet|ControlSet\d+)\\Control\\Session Manager(\\|$)',
     '(^|\\)Classes(\\|$)', '\\Active Setup\\', '\\Command Processor(\\|$)', '\\Group Policy\\Scripts', '\\ShellServiceObjects',
     '\\ShellExecuteHooks', '\\Browser Helper Objects', '\\Explorer\\SharedTaskScheduler', '\\Terminal Server\\', '\\Print\\Monitors',
-    '\\Lsa(\\|$)', '\\NetworkProvider', '\\Winsock'
+    '\\Lsa(\\|$)', '\\NetworkProvider', '\\Winsock', '\\Environment(\\|$)', '\\Explorer\\(User )?Shell Folders(\\|$)', '\\App Paths(\\|$)',
+    '\\ShellServiceObjectDelayLoad', '\\Control\\SecurityProviders(\\|$)', '\\Windows NT\\CurrentVersion\\Drivers32(\\|$)',
+    '\\Accessibility\\ATs(\\|$)', '(^|\\)Netsh(\\|$)'
 )
-$script:WdlRulesDenyValues = @('Debugger', 'StubPath', 'AutoRun', 'Shell', 'Userinit', 'AppInit_DLLs', 'BootExecute', 'ImagePath', 'ServiceDll', 'GlobalFlag', 'MonitorProcess')
+$script:WdlRulesDenyValues = @('Debugger', 'StubPath', 'AutoRun', 'Shell', 'Userinit', 'AppInit_DLLs', 'BootExecute', 'ImagePath', 'ServiceDll', 'GlobalFlag', 'MonitorProcess',
+    'CmdLine', 'SetupType', 'UserInitMprLogonScript', 'SCRNSAVE.EXE', 'AlternateShell', 'EnableLUA', 'ConsentPromptBehaviorAdmin', 'PromptOnSecureDesktop',
+    'FilterAdministratorToken', 'LocalAccountTokenFilterPolicy')
+# autostart locations a downloaded rule may delete from (removing autostart entries is debloating), never write to
+$script:WdlRulesDeleteOkKeys = @('\\CurrentVersion\\Run[^\\]*(\\|$)', '\\Policies\\Explorer\\Run(\\|$)')
 
 function Get-WdlRulesHash {
     # SHA256 (hex, upper case) of rules bytes without BOM and with LF line endings
@@ -312,8 +318,9 @@ function Test-WdlRegLocationDenied {
 
 function Test-WdlRulesPolicy {
     <# Extra limits for downloaded rules (bundled rules are reviewed with the code): registry writes stay out of
-       autostart / execution locations, texts are plain, whole-key deletes need a specific key, protected
-       patterns are safe, and service / feature changes never touch the hard-protected lists. #>
+       autostart / execution locations, deletes only remove autostart entries there (never services, Winlogon,
+       LSA, ... values), texts are plain, whole-key deletes need a specific key, protected patterns are safe, and
+       service / task / feature changes never touch the hard-protected lists. #>
     param($AppData, $TweakData)
     $bad = @()
     foreach ($p in @(Get-WdlJsonVal $AppData 'protected' @())) { if ([string]$p -notmatch '^[A-Za-z0-9.*_-]+$') { $bad += "apps.json: protected pattern '$p' not allowed" } }
@@ -332,6 +339,13 @@ function Test-WdlRulesPolicy {
                     foreach ($rx in $script:WdlRulesDenyKeys) { if (('\' + $key) -match $rx) { $bad += "${tag}: registry location not allowed for downloaded rules"; break } }
                     if ($script:WdlRulesDenyValues -contains $name) { $bad += "${tag}: value '$name' not allowed for downloaded rules" }
                     if (-not (Test-WdlRulesText ([string](Get-WdlJsonVal $u 'value' '')))) { $bad += "${tag}: undo value not allowed" }
+                } else {
+                    # undo cannot write these locations back, so a delete there would be permanent
+                    foreach ($rx in $script:WdlRulesDenyKeys) {
+                        if ($script:WdlRulesDeleteOkKeys -contains $rx) { continue }
+                        if (('\' + $key) -match $rx) { $bad += "${tag}: registry location not allowed for downloaded rules"; break }
+                    }
+                    if ($kind -eq 'deleteValue' -and $script:WdlRulesDenyValues -contains $name) { $bad += "${tag}: value '$name' not allowed for downloaded rules" }
                 }
                 if ($kind -eq 'deleteKey' -and @($key.Split('\') | Where-Object { $_ }).Count -lt 3) { $bad += "${tag}: key too general to delete" }
             }
@@ -339,6 +353,10 @@ function Test-WdlRulesPolicy {
         foreach ($op in @(Get-WdlJsonVal $t 'services' @())) {
             $n = [string](Get-WdlJsonVal $op 'name' '')
             if (Get-WdlServiceBlockReason $n) { $bad += "tweaks.json ($id) services ${n}: protected service" }
+        }
+        foreach ($op in @(Get-WdlJsonVal $t 'tasks' @())) {
+            $tp = [string](Get-WdlJsonVal $op 'path' ''); $n = [string](Get-WdlJsonVal $op 'name' '')
+            if (Get-WdlTaskBlockReason $tp $n) { $bad += "tweaks.json ($id) tasks $tp${n}: protected task" }
         }
         foreach ($op in @(Get-WdlJsonVal $t 'features' @())) {
             $n = [string](Get-WdlJsonVal $op 'name' '')
