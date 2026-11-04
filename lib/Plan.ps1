@@ -322,11 +322,14 @@ function Resolve-WdlPlanState {
         $s.NoChange = ($s.Before -and $s.Before.Exists -and $s.Before.StartType -eq $s.StartType)
         if ($s.Before -and -not $s.Before.Exists) { $s.NoChange = $true; $s.Missing = $true }
     }
+    # task / feature reads are slow (one query each): honour Cancel between them
     foreach ($s in @($Plan.Tasks)) {
+        Assert-WdlNotCancelled
         $s.Before = Get-WdlTaskState -Path $s.Path -Name $s.Name
         $s.NoChange = (-not $s.Before.Exists -or -not $s.Before.Enabled)
     }
     foreach ($s in @($Plan.Features)) {
+        Assert-WdlNotCancelled
         $s.Before = Get-WdlFeatureState -Name $s.Name
         $s.NoChange = ($s.Before -ne 'Enabled')
     }

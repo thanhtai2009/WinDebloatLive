@@ -52,6 +52,7 @@ function ConvertTo-WdlStoredState {
     $d = $State.Data
     switch ([string]$State.Kind) {
         'Binary' { $d = [Convert]::ToBase64String([byte[]]$d) }
+        'None' { if ($null -eq $d) { $d = '' } else { $d = [Convert]::ToBase64String([byte[]]$d) } }
         'QWord' { $d = [string][int64]$d }
         'MultiString' { $d = @([string[]]$d) }
         'DWord' { $d = [int]$d }
@@ -66,6 +67,7 @@ function ConvertFrom-WdlStoredState {
     $k = [string]$Stored['kind']; $d = $Stored['data']
     switch ($k) {
         'Binary' { $d = [Convert]::FromBase64String([string]$d) }
+        'None' { $d = [Convert]::FromBase64String([string]$d) }
         'QWord' { $d = [int64]::Parse([string]$d, [Globalization.CultureInfo]::InvariantCulture) }
         'MultiString' { $d = [string[]]@(@($d) | ForEach-Object { [string]$_ }) }
         'DWord' { $d = [int]([int64]$d) }
@@ -124,7 +126,7 @@ function Get-WdlBackups {
     param([string]$Dir = (Get-WdlBackupDir))
     $out = @()
     if (-not (Test-WdlPathText $Dir -Container)) { return $out }
-    foreach ($f in @(Get-ChildItem -LiteralPath $Dir -Filter 'backup-*.json' | Sort-Object Name -Descending)) {
+    foreach ($f in @(Get-ChildItem -LiteralPath $Dir -Filter 'backup-*.json' | Sort-Object { $_.Name -replace '\.json$' } -Descending)) {
         try {
             $b = Read-WdlBackup $f.FullName
             $n = @(@(Get-WdlJsonVal $b 'changes' @()) | Where-Object { [string]$_['status'] -ne 'failed' }).Count
@@ -197,112 +199,120 @@ function Complete-WdlChange {
 
 function Invoke-WdlApply {
     <# Applies a resolved plan. Every change is backed up first; a failing item is logged and skipped, the run
-       goes on. Returns @{ BackupPath; Done; Failed; Unchanged; Skipped; Reboot } #>
+       goes on. Cancel stops after the current item. Returns @{ BackupPath; Done; Failed; Unchanged; Skipped; Reboot; Cancelled } #>
     param([Parameter(Mandatory = $true)]$Session, [Parameter(Mandatory = $true)]$Plan, $RestorePoint, [string]$BackupDir = (Get-WdlBackupDir))
     $opt = $Plan.Options
     $bk = New-WdlBackup -Session $Session -Options $opt
     if ($RestorePoint -and $RestorePoint.Ok) { $bk.restorePoint = @{ created = $true; sequence = [int]$RestorePoint.Sequence } }
     New-WdlDirectory $BackupDir
-    $path = Join-Path $BackupDir ('backup-{0}.json' -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
+    $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $path = Join-Path $BackupDir "backup-$stamp.json"
+    for ($n = 2; Test-Path -LiteralPath $path; $n++) { $path = Join-Path $BackupDir "backup-$stamp-$n.json" }
     Save-WdlBackup -Backup $bk -Path $path
     Write-WdlLog -En "Backup file: $path" -Vi 'File sao lưu'
-    $sum = @{ BackupPath = $path; Done = 0; Failed = 0; Unchanged = 0; Skipped = @($Plan.Skipped).Count; Reboot = $false }
+    $sum = @{ BackupPath = $path; Done = 0; Failed = 0; Unchanged = 0; Skipped = @($Plan.Skipped).Count; Reboot = $false; Cancelled = $false }
     $total = [Math]::Max(1, (Get-WdlPlanCounts $Plan).Total)
     $step = { param($t) $script:WdlStepN++; Set-WdlProgress (5 + 90 * $script:WdlStepN / $total) $t }
     $script:WdlStepN = 0
     foreach ($s in @($Plan.Skipped)) { Write-WdlLog -Level SKIP -En "Skipped $($s.What): $($s.Reason)" -Vi 'Bỏ qua' }
 
-    # ---- registry (Default profile loaded only while needed) ----
-    $reg = @($Plan.Registry)
-    $needDef = @($reg | Where-Object { $_.Scope -eq 'DefaultUser' -and -not $_.NoChange }).Count -gt 0
-    if ($reg.Count) { Write-WdlLog -Level STEP -En 'Registry settings...' -Vi 'Thiết lập registry...' }
-    Use-WdlDefaultHive -Needed:$needDef -Script {
-        foreach ($it in $reg) {
+    try {
+        # ---- registry (Default profile loaded only while needed) ----
+        $reg = @($Plan.Registry)
+        $needDef = @($reg | Where-Object { $_.Scope -eq 'DefaultUser' -and -not $_.NoChange }).Count -gt 0
+        if ($reg.Count) { Write-WdlLog -Level STEP -En 'Registry settings...' -Vi 'Thiết lập registry...' }
+        Use-WdlDefaultHive -Needed:$needDef -Script {
+            foreach ($it in $reg) {
+                Assert-WdlNotCancelled
+                if ($it.NoChange) { $sum.Unchanged++; continue }
+                & $step "Registry: $($it.Label)"
+                $ch = @{ type = 'registry'; op = $it.Kind; root = $it.Root; path = $it.Path; name = [string]$it.Name; scope = $it.Scope; label = $it.Label; tweak = $it.TweakId }
+                $err = $null
+                try {
+                    if ($it.Kind -eq 'RegDeleteKey') { $ch.snapshot = ConvertTo-WdlStoredSnapshot (Get-WdlRegKeySnapshot -Root $it.Root -Path $it.Path) }
+                    else {
+                        $ch.before = ConvertTo-WdlStoredState (Get-WdlRegValue -Root $it.Root -Path $it.Path -Name $it.Name)
+                        if ($it.Kind -eq 'RegSet') { $ck = Get-WdlMissingKey -Root $it.Root -Path $it.Path; if ($ck) { $ch.createdKey = $ck } }
+                    }
+                    $ch = Add-WdlChange $bk $path $ch
+                    switch ($it.Kind) {
+                        'RegSet' { Set-WdlRegValue -Root $it.Root -Path $it.Path -Name $it.Name -Kind $it.ValueKind -Data $it.Data }
+                        'RegDeleteValue' { Remove-WdlRegValue -Root $it.Root -Path $it.Path -Name $it.Name }
+                        'RegDeleteKey' { Remove-WdlRegKey -Root $it.Root -Path $it.Path }
+                    }
+                } catch { $err = $_.Exception.Message }
+                if ($ch.status) { Complete-WdlChange $bk $path $ch $err }
+                if ($err) { $sum.Failed++; Write-WdlLog -Level WARN -En "  FAILED $($it.Label)\$($it.Name): $err" -Vi '  Không ghi được' }
+                else { $sum.Done++; Write-WdlLog -En ("  {0} {1}\{2}" -f $it.Kind, $it.Label, $it.Name) }
+            }
+        }
+
+        # ---- services / tasks / features / special ----
+        foreach ($s in @($Plan.Services)) {
             Assert-WdlNotCancelled
-            if ($it.NoChange) { $sum.Unchanged++; continue }
-            & $step "Registry: $($it.Label)"
-            $ch = @{ type = 'registry'; op = $it.Kind; root = $it.Root; path = $it.Path; name = [string]$it.Name; scope = $it.Scope; label = $it.Label; tweak = $it.TweakId }
+            if ($s.NoChange) { $sum.Unchanged++; continue }
+            & $step "Service: $($s.Name)"
+            $ch = Add-WdlChange $bk $path @{ type = 'service'; name = $s.Name; before = [string]$s.Before.StartType; after = $s.StartType; tweak = $s.TweakId }
+            $err = Set-WdlServiceStart -Name $s.Name -StartType $s.StartType
+            Complete-WdlChange $bk $path $ch $err
+            if ($err) { $sum.Failed++; Write-WdlLog -Level WARN -En "  FAILED service $($s.Name): $err" -Vi '  Không đổi được dịch vụ' } else { $sum.Done++; Write-WdlLog -En "  service $($s.Name): $($s.Before.StartType) -> $($s.StartType)" }
+        }
+        foreach ($s in @($Plan.Tasks)) {
+            Assert-WdlNotCancelled
+            if ($s.NoChange) { $sum.Unchanged++; continue }
+            & $step "Task: $($s.Name)"
+            $ch = Add-WdlChange $bk $path @{ type = 'task'; path = $s.Path; name = $s.Name; beforeEnabled = $true; tweak = $s.TweakId }
+            $err = Set-WdlTaskEnabled -Path $s.Path -Name $s.Name -Enabled $false
+            Complete-WdlChange $bk $path $ch $err
+            if ($err) { $sum.Failed++; Write-WdlLog -Level WARN -En "  FAILED task $($s.Path)$($s.Name): $err" -Vi '  Không tắt được tác vụ' } else { $sum.Done++; Write-WdlLog -En "  task disabled: $($s.Path)$($s.Name)" }
+        }
+        foreach ($s in @($Plan.Features)) {
+            Assert-WdlNotCancelled
+            if ($s.NoChange) { $sum.Unchanged++; continue }
+            & $step "Feature: $($s.Name)"
+            $ch = Add-WdlChange $bk $path @{ type = 'feature'; name = $s.Name; before = 'Enabled'; tweak = $s.TweakId }
+            $r = Set-WdlFeatureState -Name $s.Name -State 'Disabled'
+            Complete-WdlChange $bk $path $ch $r.Error
+            if ($r.Reboot) { $sum.Reboot = $true }
+            if ($r.Error) { $sum.Failed++; Write-WdlLog -Level WARN -En "  FAILED feature $($s.Name): $($r.Error)" -Vi '  Không tắt được tính năng' } else { $sum.Done++; Write-WdlLog -En "  feature disabled: $($s.Name)" }
+        }
+        foreach ($s in @($Plan.Special)) {
+            Assert-WdlNotCancelled
+            if ($s.NoChange) { $sum.Unchanged++; continue }
+            & $step $s.Kind
+            $ch = Add-WdlChange $bk $path @{ type = 'special'; kind = $s.Kind; before = [string]$s.Before; tweak = $s.TweakId }
             $err = $null
-            try {
-                if ($it.Kind -eq 'RegDeleteKey') { $ch.snapshot = ConvertTo-WdlStoredSnapshot (Get-WdlRegKeySnapshot -Root $it.Root -Path $it.Path) }
-                else {
-                    $ch.before = ConvertTo-WdlStoredState (Get-WdlRegValue -Root $it.Root -Path $it.Path -Name $it.Name)
-                    if ($it.Kind -eq 'RegSet') { $ck = Get-WdlMissingKey -Root $it.Root -Path $it.Path; if ($ck) { $ch.createdKey = $ck } }
-                }
-                $ch = Add-WdlChange $bk $path $ch
-                switch ($it.Kind) {
-                    'RegSet' { Set-WdlRegValue -Root $it.Root -Path $it.Path -Name $it.Name -Kind $it.ValueKind -Data $it.Data }
-                    'RegDeleteValue' { Remove-WdlRegValue -Root $it.Root -Path $it.Path -Name $it.Name }
-                    'RegDeleteKey' { Remove-WdlRegKey -Root $it.Root -Path $it.Path }
-                }
-            } catch { $err = $_.Exception.Message }
-            if ($ch.status) { Complete-WdlChange $bk $path $ch $err }
-            if ($err) { $sum.Failed++; Write-WdlLog -Level WARN -En "  FAILED $($it.Label)\$($it.Name): $err" -Vi '  Không ghi được' }
-            else { $sum.Done++; Write-WdlLog -En ("  {0} {1}\{2}" -f $it.Kind, $it.Label, $it.Name) }
-        }
-    }
-
-    # ---- services / tasks / features / special ----
-    foreach ($s in @($Plan.Services)) {
-        Assert-WdlNotCancelled
-        if ($s.NoChange) { $sum.Unchanged++; continue }
-        & $step "Service: $($s.Name)"
-        $ch = Add-WdlChange $bk $path @{ type = 'service'; name = $s.Name; before = [string]$s.Before.StartType; after = $s.StartType; tweak = $s.TweakId }
-        $err = Set-WdlServiceStart -Name $s.Name -StartType $s.StartType
-        Complete-WdlChange $bk $path $ch $err
-        if ($err) { $sum.Failed++; Write-WdlLog -Level WARN -En "  FAILED service $($s.Name): $err" -Vi '  Không đổi được dịch vụ' } else { $sum.Done++; Write-WdlLog -En "  service $($s.Name): $($s.Before.StartType) -> $($s.StartType)" }
-    }
-    foreach ($s in @($Plan.Tasks)) {
-        Assert-WdlNotCancelled
-        if ($s.NoChange) { $sum.Unchanged++; continue }
-        & $step "Task: $($s.Name)"
-        $ch = Add-WdlChange $bk $path @{ type = 'task'; path = $s.Path; name = $s.Name; beforeEnabled = $true; tweak = $s.TweakId }
-        $err = Set-WdlTaskEnabled -Path $s.Path -Name $s.Name -Enabled $false
-        Complete-WdlChange $bk $path $ch $err
-        if ($err) { $sum.Failed++; Write-WdlLog -Level WARN -En "  FAILED task $($s.Path)$($s.Name): $err" -Vi '  Không tắt được tác vụ' } else { $sum.Done++; Write-WdlLog -En "  task disabled: $($s.Path)$($s.Name)" }
-    }
-    foreach ($s in @($Plan.Features)) {
-        Assert-WdlNotCancelled
-        if ($s.NoChange) { $sum.Unchanged++; continue }
-        & $step "Feature: $($s.Name)"
-        $ch = Add-WdlChange $bk $path @{ type = 'feature'; name = $s.Name; before = 'Enabled'; tweak = $s.TweakId }
-        $r = Set-WdlFeatureState -Name $s.Name -State 'Disabled'
-        Complete-WdlChange $bk $path $ch $r.Error
-        if ($r.Reboot) { $sum.Reboot = $true }
-        if ($r.Error) { $sum.Failed++; Write-WdlLog -Level WARN -En "  FAILED feature $($s.Name): $($r.Error)" -Vi '  Không tắt được tính năng' } else { $sum.Done++; Write-WdlLog -En "  feature disabled: $($s.Name)" }
-    }
-    foreach ($s in @($Plan.Special)) {
-        Assert-WdlNotCancelled
-        if ($s.NoChange) { $sum.Unchanged++; continue }
-        & $step $s.Kind
-        $ch = Add-WdlChange $bk $path @{ type = 'special'; kind = $s.Kind; before = [string]$s.Before; tweak = $s.TweakId }
-        $err = $null
-        if ($s.Kind -eq 'ReservedStorage') { $err = Set-WdlReservedStorageState -State 'Disabled' }
-        Complete-WdlChange $bk $path $ch $err
-        if ($err) { $sum.Failed++; Write-WdlLog -Level WARN -En "  FAILED $($s.Kind): $err" -Vi '  Thất bại' } else { $sum.Done++; Write-WdlLog -En "  $($s.Kind): $($s.Before) -> Disabled" }
-    }
-
-    # ---- apps (last: slowest, and registry policies are already in place to stop reinstalls) ----
-    if (@($Plan.Apps).Count) { Write-WdlLog -Level STEP -En 'Removing apps...' -Vi 'Đang gỡ ứng dụng...' }
-    foreach ($a in @($Plan.Apps)) {
-        Assert-WdlNotCancelled
-        & $step "App: $($a.Id)"
-        $any = $false; $bad = $false
-        foreach ($fn in @($a.Packages)) {
-            $loc = ''
-            foreach ($p in @($Session.Inventory.Installed)) { if ($p.PackageFullName -eq $fn) { $loc = [string]$p.InstallLocation } }
-            $ch = Add-WdlChange $bk $path @{ type = 'app'; id = $a.Id; package = $fn; scope = $a.Scope; userSid = [string]$opt.UserSid; installLocation = $loc }
-            $err = Remove-WdlAppPackage -FullName $fn -Scope $a.Scope -UserSid $opt.UserSid
+            if ($s.Kind -eq 'ReservedStorage') { $err = Set-WdlReservedStorageState -State 'Disabled' }
             Complete-WdlChange $bk $path $ch $err
-            if ($err) { $bad = $true; Write-WdlLog -Level WARN -En "  FAILED to remove $fn : $err" -Vi '  Gỡ thất bại' } else { $any = $true; Write-WdlLog -En "  removed $fn" -Vi "  đã gỡ $fn" }
+            if ($err) { $sum.Failed++; Write-WdlLog -Level WARN -En "  FAILED $($s.Kind): $err" -Vi '  Thất bại' } else { $sum.Done++; Write-WdlLog -En "  $($s.Kind): $($s.Before) -> Disabled" }
         }
-        foreach ($pn in @($a.Provisioned)) {
-            $ch = Add-WdlChange $bk $path @{ type = 'provisioned'; id = $a.Id; package = $pn }
-            $err = Remove-WdlProvisionedPackage -PackageName $pn
-            Complete-WdlChange $bk $path $ch $err
-            if ($err) { $bad = $true; Write-WdlLog -Level WARN -En "  FAILED to deprovision $pn : $err" -Vi '  Gỡ gói cài sẵn thất bại' } else { $any = $true; Write-WdlLog -En "  deprovisioned $pn (new users)" -Vi "  đã gỡ gói cài sẵn $pn" }
+
+        # ---- apps (last: slowest, and registry policies are already in place to stop reinstalls) ----
+        if (@($Plan.Apps).Count) { Write-WdlLog -Level STEP -En 'Removing apps...' -Vi 'Đang gỡ ứng dụng...' }
+        foreach ($a in @($Plan.Apps)) {
+            Assert-WdlNotCancelled
+            & $step "App: $($a.Id)"
+            $any = $false; $bad = $false
+            foreach ($fn in @($a.Packages)) {
+                $loc = ''
+                foreach ($p in @($Session.Inventory.Installed)) { if ($p.PackageFullName -eq $fn) { $loc = [string]$p.InstallLocation } }
+                $ch = Add-WdlChange $bk $path @{ type = 'app'; id = $a.Id; package = $fn; scope = $a.Scope; userSid = [string]$opt.UserSid; installLocation = $loc }
+                $err = Remove-WdlAppPackage -FullName $fn -Scope $a.Scope -UserSid $opt.UserSid
+                Complete-WdlChange $bk $path $ch $err
+                if ($err) { $bad = $true; Write-WdlLog -Level WARN -En "  FAILED to remove $fn : $err" -Vi '  Gỡ thất bại' } else { $any = $true; Write-WdlLog -En "  removed $fn" -Vi "  đã gỡ $fn" }
+            }
+            foreach ($pn in @($a.Provisioned)) {
+                $ch = Add-WdlChange $bk $path @{ type = 'provisioned'; id = $a.Id; package = $pn }
+                $err = Remove-WdlProvisionedPackage -PackageName $pn
+                Complete-WdlChange $bk $path $ch $err
+                if ($err) { $bad = $true; Write-WdlLog -Level WARN -En "  FAILED to deprovision $pn : $err" -Vi '  Gỡ gói cài sẵn thất bại' } else { $any = $true; Write-WdlLog -En "  deprovisioned $pn (new users)" -Vi "  đã gỡ gói cài sẵn $pn" }
+            }
+            if ($bad) { $sum.Failed++ } elseif ($any) { $sum.Done++ }
         }
-        if ($bad) { $sum.Failed++ } elseif ($any) { $sum.Done++ }
+    } catch [OperationCanceledException] {
+        # stop after the current item; the summary and the backup still describe what was changed
+        $sum.Cancelled = $true
+        Write-WdlLog -Level WARN -En 'Cancelled: the remaining items were not changed' -Vi 'Đã huỷ: các mục còn lại chưa được thay đổi'
     }
     if ($sum.Done -gt 0) { $sum.Reboot = $true }
     Set-WdlProgress 100 'Done / Xong'
@@ -369,20 +379,20 @@ function Test-WdlSnapshotAllowed {
 function Invoke-WdlUndo {
     <# Reverts the changes of one backup in reverse order. Registry values and service start types come back
        exactly; removed apps are registered again when their files are still on the PC, else listed for a
-       Microsoft Store reinstall. Returns @{ Restored; Failed; Manual (texts) } #>
+       Microsoft Store reinstall. Cancel stops after the current item. Returns @{ Restored; Failed; Manual (texts); Cancelled } #>
     param([Parameter(Mandatory = $true)][string]$Path)
     $bk = Read-WdlBackup $Path
     $ex = Get-WdlRestoreExemptions
     $changes = @(Get-WdlJsonVal $bk 'changes' @())
     [array]::Reverse($changes)
     $todo = @($changes | Where-Object { @('done', 'pending') -contains [string]$_['status'] -and [string]$_['undo'] -ne 'done' })
-    $sum = @{ Restored = 0; Failed = 0; Manual = @() }
+    $sum = @{ Restored = 0; Failed = 0; Manual = @(); Cancelled = $false }
     Write-WdlLog -Level STEP -En "Undo from $Path ($($todo.Count) change(s))" -Vi "Hoàn tác từ $Path ($($todo.Count) thay đổi)"
     $needDef = @($todo | Where-Object { [string]$_['scope'] -eq 'DefaultUser' }).Count -gt 0
     $i = 0
     Use-WdlDefaultHive -Needed:$needDef -Script {
         foreach ($c in $todo) {
-            Assert-WdlNotCancelled
+            if ($script:WDL.Sync -and $script:WDL.Sync.Cancel) { $sum.Cancelled = $true; break }
             $i++; Set-WdlProgress (100 * $i / [Math]::Max(1, $todo.Count)) 'Undo... / Đang hoàn tác...'
             $err = $null; $what = ''; $manual = $null
             try {
@@ -390,6 +400,8 @@ function Invoke-WdlUndo {
                     'registry' {
                         $root = [string]$c['root']; $p = [string]$c['path']; $n = [string]$c['name']
                         $what = "$($c['label'])\$n"
+                        # a signed-out user's hive is not loaded: writing would silently do nothing
+                        if ($root -eq 'HKU' -and -not (Test-WdlRegKey -Root 'HKU' -Path ($p -split '\\')[0])) { throw "user profile $(($p -split '\\')[0]) is not loaded (sign in as that user first) / Hồ sơ người dùng chưa được nạp (hãy đăng nhập tài khoản đó trước)" }
                         if ([string]$c['op'] -eq 'RegDeleteKey') {
                             $snap = ConvertFrom-WdlStoredSnapshot (Get-WdlJsonVal $c 'snapshot')
                             if (-not $snap) { break }
@@ -423,7 +435,7 @@ function Invoke-WdlUndo {
                 }
             } catch { $err = $_.Exception.Message }
             if ($manual) { $sum.Manual += $manual; $c['undo'] = 'manual'; continue }
-            if ($err) { $sum.Failed++; $c['undo'] = 'failed'; Write-WdlLog -Level WARN -En "  FAILED to restore $what : $err" -Vi '  Không hoàn tác được' }
+            if ($err) { $sum.Failed++; $c['undo'] = 'failed'; Write-WdlLog -Level WARN -En "  FAILED to restore $what : $err" -Vi "  Không hoàn tác được $what : $err" }
             else { $sum.Restored++; $c['undo'] = 'done'; Write-WdlLog -En "  restored $what" -Vi "  đã hoàn tác $what" }
         }
     }
@@ -440,7 +452,8 @@ function Invoke-WdlUndo {
         }
     }
     foreach ($m in @($sum.Manual | Select-Object -Unique)) { Write-WdlLog -Level WARN -En "  manual: $m" -Vi '  cần làm thủ công (cài lại từ Microsoft Store)' }
-    if ($sum.Failed -eq 0) { $bk['restored'] = (Get-Date).ToString('yyyy-MM-ddTHH:mm:sszzz') }
+    if ($sum.Cancelled) { Write-WdlLog -Level WARN -En 'Undo cancelled: the remaining items were not restored' -Vi 'Đã huỷ hoàn tác: các mục còn lại chưa được khôi phục' }
+    elseif ($sum.Failed -eq 0) { $bk['restored'] = (Get-Date).ToString('yyyy-MM-ddTHH:mm:sszzz') }
     Save-WdlBackup -Backup $bk -Path $Path
     Set-WdlProgress 100 'Done / Xong'
     Write-WdlLog -Level OK -En "Undo finished: $($sum.Restored) restored, $($sum.Failed) failed, $(@($sum.Manual).Count) need a manual reinstall" -Vi "Hoàn tác xong: $($sum.Restored) đã khôi phục, $($sum.Failed) lỗi, $(@($sum.Manual).Count) cần cài lại thủ công"

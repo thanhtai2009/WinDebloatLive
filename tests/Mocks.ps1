@@ -32,7 +32,7 @@ function Get-MockRegDump {
         $k = $script:MockReg[$id]
         foreach ($n in @($k.Values.Keys | Sort-Object)) {
             $v = $k.Values[$n]; $d = $v.Data
-            if ($v.Kind -eq 'Binary') { $d = [Convert]::ToBase64String([byte[]]$d) } elseif ($v.Kind -eq 'MultiString') { $d = (@($d) -join '|') }
+            if (@('Binary', 'None') -contains $v.Kind) { $d = [Convert]::ToBase64String([byte[]]$d) } elseif ($v.Kind -eq 'MultiString') { $d = (@($d) -join '|') }
             $lines += ('{0}={1}:{2}' -f $v.Name, $v.Kind, $d)
         }
     }
@@ -50,10 +50,10 @@ function Set-WdlRegValue {
     param([string]$Root, [string]$Path, [string]$Name, [string]$Kind, $Data)
     $f = ("$Root\$Path\$Name").ToLowerInvariant()
     if ($script:MockFail.ContainsKey($f)) { throw $script:MockFail[$f] }
-    if (@('DWord', 'QWord', 'String', 'ExpandString', 'MultiString', 'Binary') -notcontains $Kind) { throw "bad kind $Kind" }
+    if (@('DWord', 'QWord', 'String', 'ExpandString', 'MultiString', 'Binary', 'None') -notcontains $Kind) { throw "bad kind $Kind" }
     if ($Kind -eq 'DWord' -and -not ($Data -is [int])) { throw "DWord data must be Int32, got $($Data.GetType().Name)" }
     if ($Kind -eq 'QWord' -and -not ($Data -is [long])) { throw "QWord data must be Int64, got $($Data.GetType().Name)" }
-    if ($Kind -eq 'Binary' -and -not ($Data -is [byte[]])) { throw 'Binary data must be byte[]' }
+    if (@('Binary', 'None') -contains $Kind -and -not ($Data -is [byte[]])) { throw "$Kind data must be byte[]" }
     Set-MockValue $Root $Path $Name $Kind $Data
 }
 function Remove-WdlRegValue {

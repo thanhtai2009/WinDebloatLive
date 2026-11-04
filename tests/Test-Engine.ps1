@@ -203,6 +203,35 @@ Assert ($res.Failed -eq 1) 'access denied on a protected service is per item'
 $u = Invoke-WdlUndo -Path $res.BackupPath
 Assert ((Get-WdlServiceStart 'DiagTrack').StartType -eq 'AutomaticDelayed' -and $script:MockTasks['\Microsoft\Windows\Application Experience\ProgramDataUpdater'] -and $script:MockFeatures['MicrosoftWindowsPowerShellV2Root'] -eq 'Enabled') 'undo restores service start type, task and feature'
 Assert ((Get-MockRegDump) -eq $before) 'service registry identical after undo'
+$pt = New-WdlPlan -AppRows @() -TweakRows @(New-WdlObj @{ Id = 'X'; Usable = $true; Entry = (New-WdlObj @{ Id = 'X'; Set = @(); Delete = @(); DeleteValue = @(); BootSet = @(); Services = @(); Features = @(); Tasks = @(@{ Path = '\Microsoft\Windows\Windows Defender\'; Name = 'Windows Defender Scheduled Scan' }) }) }) -AppIds @() -TweakIds @('X') -Options (New-WdlOptions -Session $s)
+Assert (@($pt.Tasks).Count -eq 0 -and @($pt.Skipped | Where-Object { $_.What -like 'Task *Windows Defender*' }).Count -eq 1) 'protected task skipped even from bundled rules'
+
+# ---------------- REG_NONE, unloaded user hive, cancel ----------------
+$st = ConvertFrom-WdlStoredState (ConvertFrom-WdlJson (ConvertTo-WdlJson (ConvertTo-WdlStoredState @{ Exists = $true; Kind = 'None'; Data = [byte[]](0, 7) })))
+Assert ($st.Kind -eq 'None' -and $st.Data -is [byte[]] -and $st.Data.Length -eq 2 -and $st.Data[1] -eq 7) 'REG_NONE value stored and read back as bytes'
+$st = ConvertFrom-WdlStoredState (ConvertTo-WdlStoredState @{ Exists = $true; Kind = 'None'; Data = $null })
+Assert ($st.Data -is [byte[]] -and $st.Data.Length -eq 0) 'empty REG_NONE value restorable'
+Reset-Mock; Set-MockOs 26100
+Set-MockValue 'HKU' "$sid\Software\Microsoft\Windows\CurrentVersion\Explorer" 'x' 'DWord' 1
+Set-MockValue 'HKU' "$sid\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" 'Probe' 'None' ([byte[]](1, 2))
+$s = Get-WdlSession -Config $cfg
+$plan = Get-WdlResolvedPlan -Session $s -AppIds @() -TweakIds @('NewUserSuggestionsOff') -Options (New-WdlOptions -Session $s -AppScope CurrentUser -DefaultUser $false)
+$res = Invoke-WdlApply -Session $s -Plan $plan -BackupDir $bdir
+$userItems = @($plan.Registry | Where-Object { $_.Root -eq 'HKU' -and -not $_.NoChange }).Count
+Assert ($res.Done -gt 0 -and $userItems -gt 0) "user values written ($($res.Done))"
+foreach ($kid in @($script:MockReg.Keys)) { if ($kid.StartsWith(('hku\' + $sid).ToLowerInvariant())) { $script:MockReg.Remove($kid) } }
+$hiveBackup = $res.BackupPath
+$u = Invoke-WdlUndo -Path $res.BackupPath
+Assert ($u.Failed -eq $userItems -and $u.Restored -eq 0 -and -not [string](Read-WdlBackup $res.BackupPath)['restored']) 'undo with the user hive not loaded: reported as failed, backup kept for a later undo'
+$script:WDL.Sync = @{ Cancel = $true; LogQueue = [Collections.Queue]::Synchronized((New-Object Collections.Queue)); UiLang = 'en'; Percent = 0; Status = '' }
+try {
+    $res = Invoke-WdlApply -Session $s -Plan $plan -BackupDir $bdir
+    Assert ($res.Cancelled -and $res.Done -eq 0 -and (Test-Path -LiteralPath $res.BackupPath) -and $res.BackupPath -ne $hiveBackup) 'cancel during apply returns a summary with its own backup file'
+    $first = $hiveBackup
+    Set-MockValue 'HKU' "$sid\Software\Microsoft\Windows\CurrentVersion\Explorer" 'x' 'DWord' 1
+    $u = Invoke-WdlUndo -Path $first
+    Assert ($u.Cancelled -and $u.Restored -eq 0 -and -not [string](Read-WdlBackup $first)['restored']) 'cancelled undo stops and is not marked as restored'
+} finally { $script:WDL.Sync = $null }
 
 # ---------------- restore point step ----------------
 Reset-Mock
