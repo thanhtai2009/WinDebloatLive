@@ -6,3 +6,8 @@ logs/
 settings.psd1
 # downloaded debloat rules (rules auto-update)
 /rules/
+
+# build output
+bin/
+obj/
+out/
