@@ -1524,7 +1524,7 @@ namespace WdlUi
         public Control pnlSimple, pnlAdv;
         public WdlCard cardHero, cardApps, cardTweaks, cardOptions, cardLog;
         public WdlButton btnGo, btnSimplePreview, btnAppDef, btnAppAll, btnAppNone, btnPresetApply, btnPreview, btnApply, btnUndo, btnRescan, btnCancel,
-            btnLogToggle, btnLogs, btnBackups, btnRulesCheck;
+            btnLogToggle, btnLogs, btnClearLogs, btnBackups, btnRulesCheck;
         public WdlList clbApps, clbTweaks;
         public WdlToggle rbAll, rbCur, chkRestore, chkProtect, chkDefaultUser, chkRules;
         public WdlProgress pb;
@@ -1537,7 +1537,7 @@ namespace WdlUi
         {
             Text = "WinDebloat Live";
             FitToScreen(1180, 880, 900, 620);
-            root = L.Table(1, 6);
+            root = L.Table(1, 7);
             root.Dock = DockStyle.Fill; root.Padding = L.M(24, 16, 24, 10);
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -1545,6 +1545,7 @@ namespace WdlUi
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, Theme.S(150)));
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             // header: logo, title + system line | mode switch, language
@@ -1621,13 +1622,17 @@ namespace WdlUi
             // footer
             FlowLayoutPanel ft = L.Flow(false, true); ft.Dock = DockStyle.Fill; ft.Margin = L.M(0, 6, 0, 0);
             btnLogs = new WdlButton("@lnk.log", ButtonKind.Text, "folder-open"); btnLogs.Small = true;
+            btnClearLogs = new WdlButton("@lnk.clearLogs", ButtonKind.Text, "broom"); btnClearLogs.Small = true; btnClearLogs.Margin = L.M(4, 3, 0, 3);
             btnBackups = new WdlButton("@lnk.backups", ButtonKind.Text, "folder"); btnBackups.Small = true;
-            lblRules = new WdlLabel("", TextStyle.Caption, ColorRole.OnSurfaceVariant); lblRules.IconName = "shield-check"; lblRules.Margin = L.M(12, 8, 0, 0);
-            btnRulesCheck = new WdlButton("@btn.rulesCheck", ButtonKind.Text, "refresh"); btnRulesCheck.Small = true; btnRulesCheck.Margin = L.M(4, 0, 0, 0);
-            ft.Controls.Add(btnLogs); ft.Controls.Add(btnBackups); ft.Controls.Add(lblRules); ft.Controls.Add(btnRulesCheck);
+            lblRules = new WdlLabel("", TextStyle.Caption, ColorRole.OnSurfaceVariant); lblRules.IconName = "shield-check"; lblRules.Margin = L.M(12, 12, 0, 0);
+            btnRulesCheck = new WdlButton("@btn.rulesCheck", ButtonKind.Text, "refresh"); btnRulesCheck.Small = true; btnRulesCheck.Margin = L.M(4, 4, 0, 0);
+            ft.Controls.Add(btnLogs); ft.Controls.Add(btnClearLogs); ft.Controls.Add(btnBackups); ft.Controls.Add(lblRules); ft.Controls.Add(btnRulesCheck);
 
             root.Controls.Add(hdr, 0, 0); root.Controls.Add(body, 0, 1); root.Controls.Add(cardOptions, 0, 2);
-            root.Controls.Add(act, 0, 3); root.Controls.Add(cardLog, 0, 4); root.Controls.Add(ft, 0, 5);
+            WdlLabel lblCredit = new WdlLabel("Designed by TaiNT13@PNC STG", TextStyle.Caption, ColorRole.OnSurfaceVariant);
+            lblCredit.AutoSize = false; lblCredit.Dock = DockStyle.Fill; lblCredit.Height = Theme.S(20); lblCredit.TextAlign = ContentAlignment.MiddleCenter; lblCredit.Margin = L.M(0, 2, 0, 0);
+
+            root.Controls.Add(act, 0, 3); root.Controls.Add(cardLog, 0, 4); root.Controls.Add(lblCredit, 0, 5); root.Controls.Add(ft, 0, 6);
             Controls.Add(root);
         }
 

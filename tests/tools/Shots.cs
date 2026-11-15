@@ -234,7 +234,7 @@ static class Shots
             d.list.SetItems(l.ToArray()); Save(d, file); return Environment.ExitCode;
         }
         MainForm f = new MainForm();
-        f.Text = T("app.title", "1.0.0");
+        f.Text = T("app.title", "1.3.0");
         f.cbLang.SetItems(new string[] { "Tiếng Việt", "English", "简体中文", "ភាសាខ្មែរ" });
         f.cbLang.SelectedIndex = lang == "vi" ? 0 : 1;
         f.cbPreset.SetItems(new string[] { T("preset.recommended"), T("preset.aggressive") });

@@ -11,7 +11,7 @@ if ($MyInvocation.MyCommand.Path) {
 }
 $script:WDL = @{
     Name         = 'WinDebloat Live'
-    Version      = '1.0.0'
+    Version      = '1.3.0'
     # Rule data is shared with WinDebloat Tool; its manifest "minToolVersion" refers to that tool's versions.
     # This is the WinDebloat Tool version whose rule schema this engine understands.
     RulesCompat  = '1.2.1'

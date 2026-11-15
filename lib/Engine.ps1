@@ -218,11 +218,11 @@ function Invoke-WdlApply {
 
     try {
         # ---- registry (Default profile loaded only while needed) ----
-        $reg = @($Plan.Registry)
-        $needDef = @($reg | Where-Object { $_.Scope -eq 'DefaultUser' -and -not $_.NoChange }).Count -gt 0
-        if ($reg.Count) { Write-WdlLog -Level STEP -En 'Registry settings...' -Vi 'Thiết lập registry...' }
+        $registryPlan = @($Plan.Registry)
+        $needDef = @($registryPlan | Where-Object { $_.Scope -eq 'DefaultUser' -and -not $_.NoChange }).Count -gt 0
+        if ($registryPlan.Count) { Write-WdlLog -Level STEP -En 'Registry settings...' -Vi 'Thiết lập registry...' }
         Use-WdlDefaultHive -Needed:$needDef -Script {
-            foreach ($it in $reg) {
+            foreach ($it in $registryPlan) {
                 Assert-WdlNotCancelled
                 if ($it.NoChange) { $sum.Unchanged++; continue }
                 & $step "Registry: $($it.Label)"
@@ -287,12 +287,18 @@ function Invoke-WdlApply {
             if ($err) { $sum.Failed++; Write-WdlLog -Level WARN -En "  FAILED $($s.Kind): $err" -Vi '  Thất bại' } else { $sum.Done++; Write-WdlLog -En "  $($s.Kind): $($s.Before) -> Disabled" }
         }
 
-        # ---- apps (last: slowest, and registry policies are already in place to stop reinstalls) ----
+        # ---- apps (remove provisioning before installed payloads; Appx may delete files needed by deprovisioning) ----
         if (@($Plan.Apps).Count) { Write-WdlLog -Level STEP -En 'Removing apps...' -Vi 'Đang gỡ ứng dụng...' }
         foreach ($a in @($Plan.Apps)) {
             Assert-WdlNotCancelled
             & $step "App: $($a.Id)"
             $any = $false; $bad = $false
+            foreach ($pn in @($a.Provisioned)) {
+                $ch = Add-WdlChange $bk $path @{ type = 'provisioned'; id = $a.Id; package = $pn }
+                $err = Remove-WdlProvisionedPackage -PackageName $pn
+                Complete-WdlChange $bk $path $ch $err
+                if ($err) { $bad = $true; Write-WdlLog -Level WARN -En "  FAILED to deprovision $pn : $err" -Vi '  Gỡ gói cài sẵn thất bại' } else { $any = $true; Write-WdlLog -En "  deprovisioned $pn (new users)" -Vi "  đã gỡ gói cài sẵn $pn" }
+            }
             foreach ($fn in @($a.Packages)) {
                 $loc = ''
                 foreach ($p in @($Session.Inventory.Installed)) { if ($p.PackageFullName -eq $fn) { $loc = [string]$p.InstallLocation } }
@@ -300,12 +306,6 @@ function Invoke-WdlApply {
                 $err = Remove-WdlAppPackage -FullName $fn -Scope $a.Scope -UserSid $opt.UserSid
                 Complete-WdlChange $bk $path $ch $err
                 if ($err) { $bad = $true; Write-WdlLog -Level WARN -En "  FAILED to remove $fn : $err" -Vi '  Gỡ thất bại' } else { $any = $true; Write-WdlLog -En "  removed $fn" -Vi "  đã gỡ $fn" }
-            }
-            foreach ($pn in @($a.Provisioned)) {
-                $ch = Add-WdlChange $bk $path @{ type = 'provisioned'; id = $a.Id; package = $pn }
-                $err = Remove-WdlProvisionedPackage -PackageName $pn
-                Complete-WdlChange $bk $path $ch $err
-                if ($err) { $bad = $true; Write-WdlLog -Level WARN -En "  FAILED to deprovision $pn : $err" -Vi '  Gỡ gói cài sẵn thất bại' } else { $any = $true; Write-WdlLog -En "  deprovisioned $pn (new users)" -Vi "  đã gỡ gói cài sẵn $pn" }
             }
             if ($bad) { $sum.Failed++ } elseif ($any) { $sum.Done++ }
         }

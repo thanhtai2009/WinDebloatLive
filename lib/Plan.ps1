@@ -263,7 +263,7 @@ function New-WdlPlan {
                 $targets = @(Get-WdlRegTargets -Hive $op.Hive -Key $op.Key -Options $Options)
                 if ($targets.Count -eq 0) { $plan.Skipped += @{ What = "Tweak $($t.Id): $($op.Hive)\$($op.Key)"; Reason = 'no user profile chosen' }; continue }
                 foreach ($tg in $targets) {
-                    $it = @{ Kind = $k.Kind; TweakId = $t.Id; Root = $tg.Root; Path = $tg.Path; Scope = $tg.Scope; Label = $tg.Label; Name = [string]$op.Value }
+                    $it = @{ Kind = $k.Kind; TweakId = $t.Id; Root = $tg.Root; Path = $tg.Path; Scope = $tg.Scope; Label = $tg.Label; Name = [string]$op.Name }
                     if ($k.Kind -eq 'RegSet') {
                         $it.ValueKind = ConvertTo-WdlValueKind $op.Type
                         $it.Data = ConvertTo-WdlValueData $it.ValueKind $op.Data

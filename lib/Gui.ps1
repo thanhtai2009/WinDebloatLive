@@ -581,14 +581,14 @@ function Show-WdlGui {
     $ui = @{ form = $f; tip = (New-Object Windows.Forms.ToolTip) }
     foreach ($n in @('lblSys', 'lblAppsTitle', 'lblNotOffered', 'lblStatus', 'lblRules', 'statApps', 'statTweaks', 'segMode', 'cbLang', 'cbPreset',
             'btnGo', 'btnSimplePreview', 'btnAppDef', 'btnAppAll', 'btnAppNone', 'btnPresetApply', 'btnPreview', 'btnApply', 'btnUndo', 'btnRescan', 'btnCancel',
-            'btnLogs', 'btnBackups', 'btnRulesCheck', 'clbApps', 'clbTweaks', 'rbAll', 'rbCur', 'chkRestore', 'chkProtect', 'chkDefaultUser', 'chkRules', 'pb', 'tbLog')) { $ui[$n] = $f.$n }
+            'btnLogs', 'btnClearLogs', 'btnBackups', 'btnRulesCheck', 'clbApps', 'clbTweaks', 'rbAll', 'rbCur', 'chkRestore', 'chkProtect', 'chkDefaultUser', 'chkRules', 'pb', 'tbLog')) { $ui[$n] = $f.$n }
     $script:ui = $ui
     $ui.cbLang.SetItems([string[]]@($script:WdlLangs | ForEach-Object { $_.Name }))
     for ($i = 0; $i -lt $script:WdlLangs.Count; $i++) { if ($script:WdlLangs[$i].Code -eq $script:UiLang) { $ui.cbLang.SelectedIndex = $i } }
     $ui.cbPreset.SetItems([string[]]@((T 'preset.recommended'), (T 'preset.aggressive')))
     $ui.chkRules.Checked = ([string]$script:Settings.RulesAutoUpdate -ne '0')
     $script:BusyControls = @($ui.btnPreview, $ui.btnApply, $ui.btnGo, $ui.btnSimplePreview, $ui.btnUndo, $ui.btnRescan, $ui.clbApps, $ui.clbTweaks, $ui.btnAppDef, $ui.btnAppAll, $ui.btnAppNone,
-        $ui.btnPresetApply, $ui.cbPreset, $ui.rbAll, $ui.rbCur, $ui.chkRestore, $ui.chkProtect, $ui.chkDefaultUser, $ui.segMode)
+        $ui.btnClearLogs, $ui.btnPresetApply, $ui.cbPreset, $ui.rbAll, $ui.rbCur, $ui.chkRestore, $ui.chkProtect, $ui.chkDefaultUser, $ui.segMode)
 
     # ---- handlers ----
     $script:H.Go = { Start-WdlPreview -Apply }
@@ -600,6 +600,18 @@ function Show-WdlGui {
     $script:H.Mode = { $m = 'Advanced'; if ($script:ui.segMode.SelectedIndex -eq 0) { $m = 'Simple' }; if ($m -ne $script:ModeNow) { Set-WdlMode $m } }
     $script:H.RulesCheck = { Start-WdlRulesUpdate -Manual }
     $script:H.Logs = { Start-Process -FilePath 'explorer.exe' -ArgumentList ('"{0}"' -f (Join-Path (Get-WdlDataDir) 'logs')) }
+    $script:H.ClearLogs = {
+        if ($script:Job -or $script:RulesJob) { Show-WdlMsg (T 'msg.clearLogsBusy') 'Warning' | Out-Null; return }
+        $answer = Show-WdlMsg (T 'msg.clearLogsConfirm') 'Warning' 'YesNo'
+        if ($answer -ne 'Yes') { return }
+        $dir = Join-Path (Get-WdlDataDir) 'logs'
+        if (Test-Path -LiteralPath $dir -PathType Container) {
+            Get-ChildItem -LiteralPath $dir -Filter '*.log' -File -ErrorAction Stop | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction Stop }
+        }
+        $script:Sync.LogQueue.Clear()
+        $script:ui.tbLog.Text = ''
+        $script:ui.lblStatus.Text = T 'status.logsCleared'
+    }
     $script:H.Backups = { Start-Process -FilePath 'explorer.exe' -ArgumentList ('"{0}"' -f (Get-WdlBackupDir)) }
     $script:H.AppDef = { Set-WdlChecks -Preset recommended -AppsOnly }
     $script:H.AppAll = { for ($i = 0; $i -lt $script:ui.clbApps.Count; $i++) { $r = $script:AppItems[$i]; $script:ui.clbApps.SetItemChecked($i, (-not $r.OptIn -and $r.Level -ne 'unsafe')) } }
@@ -629,6 +641,7 @@ function Show-WdlGui {
     $ui.btnCancel.Add_Click({ Invoke-WdlHandler 'Cancel' })
     $ui.segMode.Add_SelectedIndexChanged({ Invoke-WdlHandler 'Mode' })
     $ui.btnLogs.Add_Click({ Invoke-WdlHandler 'Logs' })
+    $ui.btnClearLogs.Add_Click({ Invoke-WdlHandler 'ClearLogs' })
     $ui.btnRulesCheck.Add_Click({ Invoke-WdlHandler 'RulesCheck' })
     $ui.btnBackups.Add_Click({ Invoke-WdlHandler 'Backups' })
     $ui.btnAppDef.Add_Click({ Invoke-WdlHandler 'AppDef' })

@@ -26,7 +26,7 @@ máy Windows 10 hoặc Windows 11 đang chạy. Công cụ đi kèm WinDebloat T
 và dùng chung danh sách ứng dụng và tinh chỉnh. Chế độ **Đơn giản** dọn dẹp máy bằng một nút bấm theo mặc định an
 toàn; chế độ **Nâng cao** cho phép chọn từng ứng dụng, từng thiết lập và xem trước chính xác các thay đổi. Giao
 diện theo chế độ sáng/tối của Windows, hiển thị sắc nét trên màn hình DPI cao, có tiếng Việt (mặc định) và tiếng Anh,
-một phần tiếng Trung và tiếng Khmer.
+tiếng Trung và tiếng Khmer.
 
 ## Điểm nổi bật
 - Gỡ ứng dụng cài sẵn cho mọi người dùng (kể cả tài khoản tạo sau) hoặc chỉ cho người dùng đang đăng nhập.
